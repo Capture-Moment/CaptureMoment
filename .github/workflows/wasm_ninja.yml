@@ -86,8 +86,6 @@ jobs:
         run: |
           TESTS_FLAG=""
           if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
-            # Les tests unitaires C++ sont très complexes à faire tourner dans Emscripten (nécessite Node.js)
-            # On les désactive par défaut pour le WASM, à moins que ton projet soit configuré pour.
             TESTS_FLAG="-DBUILD_TESTS=OFF"
             echo "::notice file=tests::Tests disabled for WASM build (requires specific Node.js setup)."
           fi
