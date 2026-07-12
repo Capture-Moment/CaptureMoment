@@ -34,7 +34,7 @@ ENV EMSDK="/opt/emsdk"
 # ==============================================================================
 # Install Qt framework for WebAssembly (wasm-singlethread)
 # ==============================================================================
-RUN aqt install-qt linux desktop 6.10.2 wasm-singlethread --outputdir /opt/qt -m qtdeclarative -m qtshadertools
+RUN aqt install-qt all_os wasm 6.10.2 wasm-singlethread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop
 
 # ==============================================================================
 # Configuration for CMake
