@@ -36,15 +36,13 @@ RUN emcc --version
 # ==============================================================================
 # Install Qt framework for WebAssembly (wasm-multithread)
 # ==============================================================================
-RUN python3 -m aqt list-qt all_os wasm
 
-
-RUN aqt install-qt all_os wasm 6.8.1 wasm_multithread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop
+RUN aqt install-qt all_os wasm 6.10.2 wasm_multithread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop
 
 # ==============================================================================
 # Configuration for CMake
 # ==============================================================================
-ENV CMAKE_PREFIX_PATH="/opt/qt/6.8.1/wasm-multithread;/opt/exiv2;/opt/oiio"
+ENV CMAKE_PREFIX_PATH="/opt/qt/6.10.2/wasm_multithread;/opt/exiv2;/opt/oiio"
 
 # ==============================================================================
 # Build and install Exiv2 (WASM - STATIC)
