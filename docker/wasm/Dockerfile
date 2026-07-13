@@ -57,6 +57,22 @@ RUN git clone https://github.com/madler/zlib.git /tmp/zlib-src && \
     rm -rf /tmp/*
 
 # ==============================================================================
+# Build and install Expat for WebAssembly
+# ==============================================================================
+RUN git clone https://github.com/libexpat/libexpat.git /tmp/expat-src && \
+    cd /tmp/expat-src && git checkout R_2_6_4 && \
+    emcmake cmake -S expat -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/expat-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DEXPAT_BUILD_EXAMPLES=OFF \
+          -DEXPAT_BUILD_TESTS=OFF \
+          -DEXPAT_BUILD_TOOLS=OFF && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
 # Build and install Exiv2 (WASM - STATIC)
 # ==============================================================================
 RUN git clone https://github.com/Exiv2/exiv2.git /tmp/exiv2-src && \
@@ -66,10 +82,19 @@ RUN git clone https://github.com/Exiv2/exiv2.git /tmp/exiv2-src && \
           -DCMAKE_INSTALL_PREFIX=/opt/exiv2 \
           -DBUILD_SHARED_LIBS=OFF \
           -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
-          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a && \
+          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a \
+          -DEXPAT_INCLUDE_DIR=/opt/expat-wasm/include \
+          -DEXPAT_LIBRARY=/opt/expat-wasm/lib/libexpat.a \
+          -DEXIV2_ENABLE_BROTLI=OFF \
+          -DEXIV2_ENABLE_CURL=OFF \
+          -DEXIV2_ENABLE_SSH=OFF \
+          -DEXIV2_ENABLE_WEBREADY=OFF \
+          -DEXIV2_BUILD_SAMPLES=OFF \
+          -DEXIV2_BUILD_EXIV2_COMMAND=OFF && \
     cmake --build build --parallel $(nproc) && \
     cmake --install build && \
     rm -rf /tmp/*
+
 
 # ==============================================================================
 # Build and install OpenImageIO (WASM - STATIC)
