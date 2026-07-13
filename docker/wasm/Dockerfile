@@ -45,15 +45,28 @@ RUN aqt install-qt all_os wasm 6.10.2 wasm_multithread --outputdir /opt/qt -m qt
 ENV CMAKE_PREFIX_PATH="/opt/qt/6.10.2/wasm_multithread;/opt/exiv2;/opt/oiio"
 
 # ==============================================================================
+# Build and install ZLIB for WebAssembly
+# ==============================================================================
+RUN git clone https://github.com/madler/zlib.git /tmp/zlib-src && \
+    cd /tmp/zlib-src && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/zlib-wasm && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
 # Build and install Exiv2 (WASM - STATIC)
 # ==============================================================================
 RUN git clone https://github.com/Exiv2/exiv2.git /tmp/exiv2-src && \
     cd /tmp/exiv2-src && git checkout v0.28.7 && \
-    cmake -S . -B build -G Ninja \
+    emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/exiv2 \
           -DBUILD_SHARED_LIBS=OFF \
-          -DCMAKE_TOOLCHAIN_FILE=${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake && \
+          -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
+          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a && \
     cmake --build build --parallel $(nproc) && \
     cmake --install build && \
     rm -rf /tmp/*
