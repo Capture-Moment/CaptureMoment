@@ -34,13 +34,13 @@ ENV EMSDK="/opt/emsdk"
 RUN emcc --version
 
 # ==============================================================================
-# Install Qt framework for WebAssembly (wasm-multithread)
+# Install Qt framework (wasm-multithread)
 # ==============================================================================
 
 RUN aqt install-qt all_os wasm 6.10.2 wasm_multithread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop
 
 # ==============================================================================
-# Build and install spdlog for WebAssembly (Header-Only)
+# Build and install spdlog (Header-Only)
 # ==============================================================================
 RUN git clone https://github.com/gabime/spdlog.git /tmp/spdlog-src && \
     cd /tmp/spdlog-src && git checkout v1.16.0 && \
@@ -54,7 +54,7 @@ RUN git clone https://github.com/gabime/spdlog.git /tmp/spdlog-src && \
 
 
 # ==============================================================================
-# Build and install ZLIB for WebAssembly Exiv2 and OpenImageIO require ZLIB to be built and installed for WebAssembly since it does not provide a CMake build system.
+# Build and install ZLIB for Exiv2 and OpenImageIO require ZLIB to be built and installed for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
 RUN git clone https://github.com/madler/zlib.git /tmp/zlib-src && \
     cd /tmp/zlib-src && \
@@ -125,10 +125,94 @@ RUN git clone https://github.com/Exiv2/exiv2.git /tmp/exiv2-src && \
     cmake --install build && \
     rm -rf /tmp/*
 
-# ======================== OpenImageIO Dependencies for WebAssembly =========================
+# ======================== OpenColorIO Dependencies =========================
 
 # ==============================================================================
-# Build and install Imath for WebAssembly (WASM - STATIC) OpenImageIO requires Imath to be built and installed for WebAssembly since it does not provide a CMake build system.
+# Build and install pystring
+# ==============================================================================
+
+RUN git clone https://github.com/imageworks/pystring.git /tmp/pystring-src && \
+    cd /tmp/pystring-src && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/pystring-wasm \
+          -DBUILD_SHARED_LIBS=OFF && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
+# Build and install yaml-cpp
+# ==============================================================================
+RUN git clone https://github.com/jbeder/yaml-cpp.git /tmp/yaml-cpp-src && \
+    cd /tmp/yaml-cpp-src && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/yaml-cpp-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DYAML_CPP_BUILD_TESTS=OFF && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
+# Build and install minizip (Required by OpenColorIO)
+# ==============================================================================
+RUN git clone https://github.com/madler/zlib.git /tmp/minizip-src && \
+    cd /tmp/minizip-src && \
+    cd contrib/minizip && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/minizip-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
+          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
+# Build and install OpenColorIO
+# ==============================================================================
+RUN git clone https://github.com/AcademySoftwareFoundation/OpenColorIO.git /tmp/opencolorio-src && \
+    cd /tmp/opencolorio-src && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/opencolorio-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DBUILD_TESTING=OFF \
+          -DOCIO_BUILD_APPS=OFF \
+          -DOCIO_BUILD_DOCS=OFF \
+          -DOCIO_BUILD_PYTHON=OFF \
+          -DOCIO_BUILD_JNIGLUE=OFF \
+          -Dexpat_DIR=/opt/expat-wasm/lib/cmake/expat-2.6.4 \
+          -Dyaml-cpp_DIR=/opt/yaml-cpp-wasm/lib/cmake/yaml-cpp \
+          -Dpystring_DIR=/opt/pystring-wasm/lib/cmake/pystring \
+          -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
+          -DMINIZIP_INCLUDE_DIR=/opt/minizip-wasm/include \
+          -DMINIZIP_LIBRARY=/opt/minizip-wasm/lib/libminizip.a && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
+# Build and install fmtlib
+# ==============================================================================
+RUN git clone https://github.com/fmtlib/fmt.git /tmp/fmt-src && \
+    cd /tmp/fmt-src && git checkout 10.2.1 && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/fmt-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DFMT_TEST=OFF && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ======================== OpenImageIO Dependencies =========================
+
+# ==============================================================================
+# Build and install Imath requires Imath to be built and installed for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
 RUN git clone https://github.com/AcademySoftwareFoundation/Imath.git /tmp/imath-src && \
     cd /tmp/imath-src && \
@@ -142,7 +226,7 @@ RUN git clone https://github.com/AcademySoftwareFoundation/Imath.git /tmp/imath-
     rm -rf /tmp/*
 
 # ==============================================================================
-# Build and install OpenEXR for WebAssembly for OpenImageIO requires OpenEXR to be built and installed for WebAssembly since it does not provide a CMake build system.
+# Build and install OpenEXR requires OpenEXR to be built and installed for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
 RUN git clone https://github.com/AcademySoftwareFoundation/openexr.git /tmp/openexr-src && \
     cd /tmp/openexr-src && \
@@ -161,7 +245,7 @@ RUN git clone https://github.com/AcademySoftwareFoundation/openexr.git /tmp/open
     rm -rf /tmp/*
 
 # ==============================================================================
-# Build and install LibJPEG-Turbo for WebAssembly
+# Build and install LibJPEG-Turbo
 # ==============================================================================
 RUN git clone https://github.com/libjpeg-turbo/libjpeg-turbo.git /tmp/libjpeg-src && \
     cd /tmp/libjpeg-src && \
@@ -174,7 +258,7 @@ RUN git clone https://github.com/libjpeg-turbo/libjpeg-turbo.git /tmp/libjpeg-sr
     cmake --install build && \
     rm -rf /tmp/*
 # ==============================================================================
-# Build and install LibPNG for WebAssembly
+# Build and install LibPNG
 # ==============================================================================
 RUN git clone https://github.com/pnggroup/libpng.git /tmp/libpng-src && \
     cd /tmp/libpng-src && \
@@ -190,7 +274,7 @@ RUN git clone https://github.com/pnggroup/libpng.git /tmp/libpng-src && \
     rm -rf /tmp/*
 
 # ==============================================================================
-# Build and install LibTIFF for WebAssembly
+# Build and install LibTIFF
 # ==============================================================================
 RUN git clone https://gitlab.com/libtiff/libtiff.git /tmp/libtiff-src && \
     cd /tmp/libtiff-src &&  \
@@ -224,6 +308,8 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a \
           -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
           -DOpenEXR_DIR=/opt/openexr-wasm/lib/cmake/OpenEXR \
+          -DOpenColorIO_DIR=/opt/opencolorio-wasm/lib/cmake/OpenColorIO \
+          -Dfmt_DIR=/opt/fmt-wasm/lib/cmake/fmt \
           -Dlibjpeg-turbo_DIR=/opt/libjpeg-wasm/lib/cmake/libjpeg-turbo \
           -DJPEG_INCLUDE_DIR=/opt/libjpeg-wasm/include \
           -DJPEG_LIBRARY=/opt/libjpeg-wasm/lib/libjpeg.a \
