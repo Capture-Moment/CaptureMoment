@@ -60,7 +60,7 @@ RUN git clone https://github.com/madler/zlib.git /tmp/zlib-src && \
 # Build and install Expat for WebAssembly
 # ==============================================================================
 RUN git clone https://github.com/libexpat/libexpat.git /tmp/expat-src && \
-    cd /tmp/expat-src && git checkout R_2_6_4 && \
+    cd /tmp/expat-src && \
     emcmake cmake -S expat -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/expat-wasm \
@@ -76,7 +76,7 @@ RUN git clone https://github.com/libexpat/libexpat.git /tmp/expat-src && \
 # Build and install inih for WebAssembly
 # ==============================================================================
 RUN git clone https://github.com/benhoyt/inih.git /tmp/inih-src && \
-    cd /tmp/inih-src && git checkout r58 && \
+    cd /tmp/inih-src && \
     emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/inih-wasm \
