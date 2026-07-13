@@ -145,7 +145,7 @@ RUN git clone https://github.com/AcademySoftwareFoundation/Imath.git /tmp/imath-
 # Build and install OpenEXR for WebAssembly for OpenImageIO requires OpenEXR to be built and installed for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
 RUN git clone https://github.com/AcademySoftwareFoundation/openexr.git /tmp/openexr-src && \
-    cd /tmp/openexr-src && git checkout v3.3.2 && \
+    cd /tmp/openexr-src && \
     emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/openexr-wasm \
@@ -193,7 +193,7 @@ RUN git clone https://github.com/pnggroup/libpng.git /tmp/libpng-src && \
 # Build and install LibTIFF for WebAssembly
 # ==============================================================================
 RUN git clone https://gitlab.com/libtiff/libtiff.git /tmp/libtiff-src && \
-    cd /tmp/libtiff-src && git checkout v4.7.0 && \
+    cd /tmp/libtiff-src &&  \
     emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/libtiff-wasm \
