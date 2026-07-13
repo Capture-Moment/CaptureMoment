@@ -40,9 +40,18 @@ RUN emcc --version
 RUN aqt install-qt all_os wasm 6.10.2 wasm_multithread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop
 
 # ==============================================================================
-# Configuration for CMake
+# Build and install spdlog for WebAssembly (Header-Only)
 # ==============================================================================
-ENV CMAKE_PREFIX_PATH="/opt/qt/6.10.2/wasm_multithread;/opt/exiv2;/opt/oiio"
+RUN git clone https://github.com/gabime/spdlog.git /tmp/spdlog-src && \
+    cd /tmp/spdlog-src && git checkout v1.16.0 && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/spdlog-wasm \
+          -DSPDLOG_HEADER_ONLY=ON && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
 
 # ==============================================================================
 # Build and install ZLIB for WebAssembly
@@ -133,3 +142,8 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
     rm -rf /tmp/*
 
 WORKDIR /app
+
+# ==============================================================================
+# Configuration for CMake
+# ==============================================================================
+ENV CMAKE_PREFIX_PATH="/opt/qt/6.10.2/wasm_multithread;/opt/exiv2;/opt/oiio;/opt/spdlog-wasm"
