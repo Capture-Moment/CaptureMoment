@@ -54,7 +54,7 @@ RUN git clone https://github.com/gabime/spdlog.git /tmp/spdlog-src && \
 
 
 # ==============================================================================
-# Build and install ZLIB for WebAssembly
+# Build and install ZLIB for WebAssembly Exiv2 and OpenImageIO require ZLIB to be built and installed for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
 RUN git clone https://github.com/madler/zlib.git /tmp/zlib-src && \
     cd /tmp/zlib-src && \
@@ -66,7 +66,7 @@ RUN git clone https://github.com/madler/zlib.git /tmp/zlib-src && \
     rm -rf /tmp/*
 
 # ==============================================================================
-# Build and install Expat for WebAssembly
+# Build and install Expat for WebAssembly Exiv2 requires Expat to be built and installed for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
 RUN git clone https://github.com/libexpat/libexpat.git /tmp/expat-src && \
     cd /tmp/expat-src && \
@@ -82,7 +82,7 @@ RUN git clone https://github.com/libexpat/libexpat.git /tmp/expat-src && \
     rm -rf /tmp/*
 
 # ==============================================================================
-# Build and install inih for WebAssembly (Manual build)
+# Build and install inih for WebAssembly (Manual build) Exiv2 requires inih to be built and installed manually for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
 RUN git clone https://github.com/benhoyt/inih.git /tmp/inih-src && \
     cd /tmp/inih-src && \
@@ -121,18 +121,37 @@ RUN git clone https://github.com/Exiv2/exiv2.git /tmp/exiv2-src && \
     cmake --install build && \
     rm -rf /tmp/*
 
+
+# ==============================================================================
+# Build and install Imath for WebAssembly (WASM - STATIC) OpenImageIO requires Imath to be built and installed for WebAssembly since it does not provide a CMake build system.
+# ==============================================================================
+RUN git clone https://github.com/AcademySoftwareFoundation/Imath.git /tmp/imath-src && \
+    cd /tmp/imath-src && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/imath-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DBUILD_TESTING=OFF && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
 # ==============================================================================
 # Build and install OpenImageIO (WASM - STATIC)
 # ==============================================================================
 RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/oiio-src && \
     cd /tmp/oiio-src && git checkout v3.1.14.0 && \
-    cmake -S . -B build -G Ninja \
+    emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/oiio \
           -DBUILD_SHARED_LIBS=OFF \
           -DCMAKE_CXX_COMPILER_VERSION=22.1.0 \
           -DOpenImageIO_BUILD_MISSING_DEPS=required \
           -DSTOP_ON_WARNING=0 \
+          -DUSE_ZLIB=ON \
+          -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
+          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a \
+          -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
           -DOIIO_BUILD_TOOLS=OFF \
           -DOIIO_BUILD_TESTS=OFF \
           -DUSE_PYTHON=OFF \
