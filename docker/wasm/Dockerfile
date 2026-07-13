@@ -1,4 +1,4 @@
-FROM ubuntu:26.10
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -30,6 +30,8 @@ RUN git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk && \
 # Activate Emscripten environment for all users
 ENV PATH="/opt/emsdk:/opt/emsdk/upstream/emscripten:${PATH}"
 ENV EMSDK="/opt/emsdk"
+
+RUN emcc --version
 
 # ==============================================================================
 # Install Qt framework for WebAssembly (wasm-multithread)
