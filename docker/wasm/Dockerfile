@@ -37,7 +37,7 @@ RUN emcc --version
 # Install Qt framework for WebAssembly (wasm-multithread)
 # ==============================================================================
 
-RUN aqt install-qt all_os wasm 6.10.2 wasm-multithread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop --base https://download.qt.io/online/qtsdkrepository
+RUN aqt install-qt all_os wasm 6.10.2 wasm-multithread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop
 
 RUN python -m aqt list-qt all_os wasm --arch 6.10.2
 
