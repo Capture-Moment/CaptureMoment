@@ -32,14 +32,17 @@ ENV PATH="/opt/emsdk:/opt/emsdk/upstream/emscripten:${PATH}"
 ENV EMSDK="/opt/emsdk"
 
 # ==============================================================================
-# Install Qt framework for WebAssembly (wasm-singlethread)
+# Install Qt framework for WebAssembly (wasm-multithread)
 # ==============================================================================
-RUN aqt install-qt all_os wasm 6.10.2 wasm-singlethread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop --base https://download.qt.io/online/qtsdkrepository
+
+RUN aqt install-qt all_os wasm 6.10.2 wasm-multithread --outputdir /opt/qt -m qtdeclarative -m qtshadertools --autodesktop --base https://download.qt.io/online/qtsdkrepository
+
+RUN python -m aqt list-qt all_os wasm --arch 6.10.2
 
 # ==============================================================================
 # Configuration for CMake
 # ==============================================================================
-ENV CMAKE_PREFIX_PATH="/opt/qt/6.10.2/wasm-singlethread;/opt/exiv2;/opt/oiio"
+ENV CMAKE_PREFIX_PATH="/opt/qt/6.10.2/wasm-multithread;/opt/exiv2;/opt/oiio"
 
 # ==============================================================================
 # Build and install Exiv2 (WASM - STATIC)
