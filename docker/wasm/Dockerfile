@@ -137,6 +137,25 @@ RUN git clone https://github.com/AcademySoftwareFoundation/Imath.git /tmp/imath-
     rm -rf /tmp/*
 
 # ==============================================================================
+# Build and install OpenEXR for WebAssembly for OpenImageIO requires OpenEXR to be built and installed for WebAssembly since it does not provide a CMake build system.
+# ==============================================================================
+RUN git clone https://github.com/AcademySoftwareFoundation/openexr.git /tmp/openexr-src && \
+    cd /tmp/openexr-src && git checkout v3.3.2 && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/openexr-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DBUILD_TESTING=OFF \
+          -DOPENEXR_BUILD_EXAMPLES=OFF \
+          -DOPENEXR_BUILD_TOOLS=OFF \
+          -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
+          -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
+          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
 # Build and install OpenImageIO (WASM - STATIC)
 # ==============================================================================
 RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/oiio-src && \
@@ -152,6 +171,7 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
           -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a \
           -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
+          -DOpenEXR_DIR=/opt/openexr-wasm/lib/cmake/OpenEXR \
           -DOIIO_BUILD_TOOLS=OFF \
           -DOIIO_BUILD_TESTS=OFF \
           -DUSE_PYTHON=OFF \
