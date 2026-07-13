@@ -172,6 +172,39 @@ RUN git clone https://github.com/libjpeg-turbo/libjpeg-turbo.git /tmp/libjpeg-sr
     cmake --build build --parallel $(nproc) && \
     cmake --install build && \
     rm -rf /tmp/*
+# ==============================================================================
+# Build and install LibPNG for WebAssembly
+# ==============================================================================
+RUN git clone https://github.com/pnggroup/libpng.git /tmp/libpng-src && \
+    cd /tmp/libpng-src && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/libpng-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DPNG_TESTS=OFF \
+          -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
+          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
+# Build and install LibTIFF for WebAssembly
+# ==============================================================================
+RUN git clone https://gitlab.com/libtiff/libtiff.git /tmp/libtiff-src && \
+    cd /tmp/libtiff-src && git checkout v4.7.0 && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/libtiff-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -Dtiff-tests=OFF \
+          -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
+          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a \
+          -DJPEG_INCLUDE_DIR=/opt/libjpeg-wasm/include \
+          -DJPEG_LIBRARY=/opt/libjpeg-wasm/lib/libjpeg.a && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
 
 # ==============================================================================
 # Build and install OpenImageIO (WASM - STATIC)
@@ -193,6 +226,10 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -Dlibjpeg-turbo_DIR=/opt/libjpeg-wasm/lib/cmake/libjpeg-turbo \
           -DJPEG_INCLUDE_DIR=/opt/libjpeg-wasm/include \
           -DJPEG_LIBRARY=/opt/libjpeg-wasm/lib/libjpeg.a \
+          -DPNG_PNG_INCLUDE_DIR=/opt/libpng-wasm/include/libpng16 \
+          -DPNG_LIBRARY=/opt/libpng-wasm/lib/libpng16.a \
+          -DTIFF_INCLUDE_DIR=/opt/libtiff-wasm/include \
+          -DTIFF_LIBRARY=/opt/libtiff-wasm/lib/libtiff.a \
           -DOIIO_BUILD_TOOLS=OFF \
           -DOIIO_BUILD_TESTS=OFF \
           -DUSE_PYTHON=OFF \
