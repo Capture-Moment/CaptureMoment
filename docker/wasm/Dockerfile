@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 # ==============================================================================
 # Install Python core packages
 # ==============================================================================
-RUN pip3 install --break-system-packages cmake aqtinstall
+RUN pip3 install --break-system-packages cmake aqtinstall halide
 
 # ==============================================================================
 # Install Emscripten SDK
@@ -121,7 +121,7 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/oiio \
           -DBUILD_SHARED_LIBS=OFF \
-          -DCMAKE_TOOLCHAIN_FILE=${EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+          -DCMAKE_CXX_COMPILER_VERSION=22.1.0 \
           -DOpenImageIO_BUILD_MISSING_DEPS=required \
           -DSTOP_ON_WARNING=0 \
           -DOIIO_BUILD_TOOLS=OFF \
