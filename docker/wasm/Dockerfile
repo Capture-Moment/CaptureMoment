@@ -73,6 +73,22 @@ RUN git clone https://github.com/libexpat/libexpat.git /tmp/expat-src && \
     rm -rf /tmp/*
 
 # ==============================================================================
+# Build and install inih for WebAssembly
+# ==============================================================================
+RUN git clone https://github.com/benhoyt/inih.git /tmp/inih-src && \
+    cd /tmp/inih-src && git checkout r58 && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/inih-wasm \
+          -DBUILD_SHARED_LIBS=OFF \
+          -DINI_BUILD_EXAMPLES=OFF \
+          -DINI_BUILD_TESTS=OFF && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+
+# ==============================================================================
 # Build and install Exiv2 (WASM - STATIC)
 # ==============================================================================
 RUN git clone https://github.com/Exiv2/exiv2.git /tmp/exiv2-src && \
@@ -81,10 +97,7 @@ RUN git clone https://github.com/Exiv2/exiv2.git /tmp/exiv2-src && \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/exiv2 \
           -DBUILD_SHARED_LIBS=OFF \
-          -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
-          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a \
-          -DEXPAT_INCLUDE_DIR=/opt/expat-wasm/include \
-          -DEXPAT_LIBRARY=/opt/expat-wasm/lib/libexpat.a \
+          -DCMAKE_PREFIX_PATH="/opt/inih-wasm;/opt/expat-wasm;/opt/zlib-wasm" \
           -DEXIV2_ENABLE_BROTLI=OFF \
           -DEXIV2_ENABLE_CURL=OFF \
           -DEXIV2_ENABLE_SSH=OFF \
