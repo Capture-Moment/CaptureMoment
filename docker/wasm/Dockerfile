@@ -65,6 +65,9 @@ RUN git clone https://github.com/madler/zlib.git /tmp/zlib-src && \
     cmake --install build && \
     rm -rf /tmp/*
 
+
+# ======================== Exiv2 Dependencies for WebAssembly =========================
+
 # ==============================================================================
 # Build and install Expat for WebAssembly Exiv2 requires Expat to be built and installed for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
@@ -121,6 +124,7 @@ RUN git clone https://github.com/Exiv2/exiv2.git /tmp/exiv2-src && \
     cmake --install build && \
     rm -rf /tmp/*
 
+# ======================== OpenImageIO Dependencies for WebAssembly =========================
 
 # ==============================================================================
 # Build and install Imath for WebAssembly (WASM - STATIC) OpenImageIO requires Imath to be built and installed for WebAssembly since it does not provide a CMake build system.
@@ -156,6 +160,20 @@ RUN git clone https://github.com/AcademySoftwareFoundation/openexr.git /tmp/open
     rm -rf /tmp/*
 
 # ==============================================================================
+# Build and install LibJPEG-Turbo for WebAssembly
+# ==============================================================================
+RUN git clone https://github.com/libjpeg-turbo/libjpeg-turbo.git /tmp/libjpeg-src && \
+    cd /tmp/libjpeg-src && \
+    emcmake cmake -S . -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/opt/libjpeg-wasm \
+          -DENABLE_SHARED=OFF \
+          -DWITH_SIMD=OFF && \
+    cmake --build build --parallel $(nproc) && \
+    cmake --install build && \
+    rm -rf /tmp/*
+
+# ==============================================================================
 # Build and install OpenImageIO (WASM - STATIC)
 # ==============================================================================
 RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/oiio-src && \
@@ -172,6 +190,7 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a \
           -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
           -DOpenEXR_DIR=/opt/openexr-wasm/lib/cmake/OpenEXR \
+          -Dlibjpeg-turbo_DIR=/opt/libjpeg-wasm/lib/cmake/libjpeg-turbo \
           -DOIIO_BUILD_TOOLS=OFF \
           -DOIIO_BUILD_TESTS=OFF \
           -DUSE_PYTHON=OFF \
