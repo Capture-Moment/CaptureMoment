@@ -60,7 +60,8 @@ RUN git clone https://github.com/madler/zlib.git /tmp/zlib-src && \
     cd /tmp/zlib-src && \
     emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=/opt/zlib-wasm && \
+          -DCMAKE_INSTALL_PREFIX=/opt/zlib-wasm \
+          -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
     cmake --build build --parallel $(nproc) && \
     cmake --install build && \
     rm -rf /tmp/*
@@ -180,7 +181,7 @@ RUN git clone https://github.com/pnggroup/libpng.git /tmp/libpng-src && \
     emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/libpng-wasm \
-          -DBUILD_SHARED_LIBS=OFF \
+          -DPNG_SHARED=OFF \
           -DPNG_TESTS=OFF \
           -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
           -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a && \
