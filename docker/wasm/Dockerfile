@@ -191,6 +191,8 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
           -DOpenEXR_DIR=/opt/openexr-wasm/lib/cmake/OpenEXR \
           -Dlibjpeg-turbo_DIR=/opt/libjpeg-wasm/lib/cmake/libjpeg-turbo \
+          -DJPEG_INCLUDE_DIR=/opt/libjpeg-wasm/include \
+          -DJPEG_LIBRARY=/opt/libjpeg-wasm/lib/libjpeg.a \
           -DOIIO_BUILD_TOOLS=OFF \
           -DOIIO_BUILD_TESTS=OFF \
           -DUSE_PYTHON=OFF \
