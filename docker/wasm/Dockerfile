@@ -156,17 +156,17 @@ RUN git clone https://github.com/jbeder/yaml-cpp.git /tmp/yaml-cpp-src && \
     rm -rf /tmp/*
 
 # ==============================================================================
-# Build and install minizip (Required by OpenColorIO)
+# Build and install minizip
 # ==============================================================================
-RUN git clone https://github.com/madler/zlib.git /tmp/minizip-src && \
-    cd /tmp/minizip-src && \
-    cd contrib/minizip && \
+RUN git clone https://github.com/zlib-ng/minizip-ng.git /tmp/minizip-src && \
+    cd /tmp/minizip-src && git checkout 4.0.7 && \
     emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/minizip-wasm \
           -DBUILD_SHARED_LIBS=OFF \
-          -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
-          -DZLIB_LIBRARY=/opt/zlib-wasm/lib/libz.a && \
+          -DMZ_COMPAT=ON \
+          -DMZ_ZLIB=ON \
+          -DZLIB_DIR=/opt/zlib-wasm/lib/cmake/zlib && \
     cmake --build build --parallel $(nproc) && \
     cmake --install build && \
     rm -rf /tmp/*
