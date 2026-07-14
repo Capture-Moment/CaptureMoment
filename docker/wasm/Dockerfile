@@ -310,8 +310,11 @@ RUN git clone https://gitlab.com/libtiff/libtiff.git /tmp/libtiff-src && \
 # ==============================================================================
 RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/oiio-src && \
     cd /tmp/oiio-src && git checkout v3.1.14.0 && \
+    EXPAT_CMAKE_DIR=$(find /opt/expat-wasm/lib/cmake -type d -name "expat*" | head -n 1) && \
+    echo "Using EXPAT_CMAKE_DIR: $EXPAT_CMAKE_DIR" && \
     emcmake cmake -S . -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
           -DCMAKE_INSTALL_PREFIX=/opt/oiio \
           -DBUILD_SHARED_LIBS=OFF \
           -DSTOP_ON_WARNING=0 \
@@ -321,9 +324,7 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
           -DOpenEXR_DIR=/opt/openexr-wasm/lib/cmake/OpenEXR \
           -DOpenColorIO_DIR=/opt/opencolorio-wasm/lib/cmake/OpenColorIO \
-          -Dexpat_DIR=/opt/expat-wasm/lib/cmake/expat-2.6.4 \
-          -Dyaml-cpp_DIR=/opt/yaml-cpp-wasm/lib/cmake/yaml-cpp \
-          -Dpystring_DIR=/opt/pystring-wasm/lib/cmake/pystring \
+          -Dexpat_DIR=$EXPAT_CMAKE_DIR \
           -Dfmt_DIR=/opt/fmt-wasm/lib/cmake/fmt \
           -Dlibjpeg-turbo_DIR=/opt/libjpeg-wasm/lib/cmake/libjpeg-turbo \
           -DJPEG_INCLUDE_DIR=/opt/libjpeg-wasm/include \
@@ -334,10 +335,14 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DTIFF_LIBRARY=/opt/libtiff-wasm/lib/libtiff.a \
           -DOPENJPEG_INCLUDE_DIR=/opt/openjpeg-wasm/include/openjpeg-2.5 \
           -DOPENJPEG_LIBRARY=/opt/openjpeg-wasm/lib/libopenjp2.a \
+          -DUSE_OPENJPEG=ON \
+          -DUSE_LIBRAW=OFF \
           -DOIIO_BUILD_TOOLS=OFF \
           -DOIIO_BUILD_TESTS=OFF \
           -DUSE_PYTHON=OFF \
-          -DUSE_FFMPEG=OFF && \
+          -DUSE_FFMPEG=OFF \
+          -DUSE_OPENCV=OFF \
+          -DUSE_OPENVDB=OFF && \
     cmake --build build --parallel $(nproc) && \
     cmake --install build && \
     rm -rf /tmp/*
