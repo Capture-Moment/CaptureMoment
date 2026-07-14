@@ -321,6 +321,9 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DImath_DIR=/opt/imath-wasm/lib/cmake/Imath \
           -DOpenEXR_DIR=/opt/openexr-wasm/lib/cmake/OpenEXR \
           -DOpenColorIO_DIR=/opt/opencolorio-wasm/lib/cmake/OpenColorIO \
+          -Dexpat_DIR=/opt/expat-wasm/lib/cmake/expat-2.6.4 \
+          -Dyaml-cpp_DIR=/opt/yaml-cpp-wasm/lib/cmake/yaml-cpp \
+          -Dpystring_DIR=/opt/pystring-wasm/lib/cmake/pystring \
           -Dfmt_DIR=/opt/fmt-wasm/lib/cmake/fmt \
           -Dlibjpeg-turbo_DIR=/opt/libjpeg-wasm/lib/cmake/libjpeg-turbo \
           -DJPEG_INCLUDE_DIR=/opt/libjpeg-wasm/include \
