@@ -211,22 +211,6 @@ RUN git clone https://github.com/fmtlib/fmt.git /tmp/fmt-src && \
 
 # ======================== OpenImageIO Dependencies =========================
 
-
-# ==============================================================================
-# Build and install LibRaw (Added for OIIO RAW support)
-# ==============================================================================
-RUN git clone https://github.com/LibRaw/LibRaw.git /tmp/libraw-src && \
-    cd /tmp/libraw-src && \
-    emcmake cmake -S . -B build -G Ninja \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=/opt/libraw-wasm \
-          -DBUILD_SHARED_LIBS=OFF \
-          -DENABLE_EXAMPLES=OFF \
-          -DENABLE_OPENMP=OFF && \
-    cmake --build build --parallel $(nproc) && \
-    cmake --install build && \
-    rm -rf /tmp/*
-
 # ==============================================================================
 # Build and install Imath requires Imath to be built and installed for WebAssembly since it does not provide a CMake build system.
 # ==============================================================================
@@ -347,8 +331,6 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DPNG_LIBRARY=/opt/libpng-wasm/lib/libpng16.a \
           -DTIFF_INCLUDE_DIR=/opt/libtiff-wasm/include \
           -DTIFF_LIBRARY=/opt/libtiff-wasm/lib/libtiff.a \
-          -DLibRaw_INCLUDE_DIR=/opt/libraw-wasm/include \
-          -DLibRaw_LIBRARY=/opt/libraw-wasm/lib/libraw.a \
           -DOPENJPEG_INCLUDE_DIR=/opt/openjpeg-wasm/include/openjpeg-2.5 \
           -DOPENJPEG_LIBRARY=/opt/openjpeg-wasm/lib/libopenjp2.a \
           -DOIIO_BUILD_TOOLS=OFF \
