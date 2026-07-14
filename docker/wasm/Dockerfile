@@ -314,8 +314,6 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=/opt/oiio \
           -DBUILD_SHARED_LIBS=OFF \
-          -DCMAKE_CXX_COMPILER_VERSION=22.1.0 \
-          -DOpenImageIO_BUILD_MISSING_DEPS=required \
           -DSTOP_ON_WARNING=0 \
           -DUSE_ZLIB=ON \
           -DZLIB_INCLUDE_DIR=/opt/zlib-wasm/include \
