@@ -1,0 +1,127 @@
+name: CI WebAssembly (Emscripten + GHCR)
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
+  workflow_dispatch:
+
+env:
+  CMAKE_GENERATOR: Ninja
+
+jobs:
+  # ====================================================================
+  # Construct the Docker image and push it to GHCR
+  # ====================================================================
+  build-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    outputs:
+      image_uri: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Convert repository name to lowercase
+        run: |
+          echo "repo_lower=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          
+      - name: Connect to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Docker Meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/wasm-emsdk
+          tags: |
+            type=raw,value=latest
+            
+      - name: Build and Push the Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/wasm/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ====================================================================
+  # Build the Project for WebAssembly
+  # ====================================================================
+  build:
+    needs: build-docker
+    if: needs.build-docker.result == 'success' || needs.build-docker.result == 'skipped'
+    runs-on: ubuntu-latest
+
+    container: ${{ needs.build-docker.outputs.image_uri }}
+
+    strategy:
+      matrix:
+        build-type: [Release]
+        include:
+          - build-type: Release
+            preset: release-ninja-wasm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Configure CMake Project
+        id: configure
+        run: |
+          TESTS_FLAG=""
+          if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
+            TESTS_FLAG="-DBUILD_TESTS=OFF"
+            echo "::notice file=tests::Tests disabled for WASM build (requires specific Node.js setup)."
+          fi
+
+          cmake \
+          --preset ${{ matrix.preset }} \
+          -DBUILD_DESKTOP_UI:BOOL=OFF \
+          -DBUILD_WASM_UI:BOOL=ON \
+          ${TESTS_FLAG} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DCMAKE_TOOLCHAIN_FILE=/opt/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake \
+          -DQt6_DIR=/opt/qt/6.10.2/wasm_multithread/lib/cmake/Qt6 \
+          -DOpenImageIO_DIR=/opt/oiio/lib/cmake/OpenImageIO \
+          -Dexiv2_DIR=/opt/exiv2/lib/cmake/exiv2 \
+          -Dspdlog_DIR=/opt/spdlog-wasm/lib/cmake/spdlog \
+          -DCMAKE_EXE_LINKER_FLAGS="-sALLOW_MEMORY_GROWTH=1 -sMAX_WEBGL_VERSION=2 -sUSE_WEBGL2=1"
+
+        shell: bash
+
+      - name: Build Project
+        run: |
+           cmake --build build/${{ matrix.preset }} --config ${{ matrix.build-type }} --parallel $(nproc)
+        shell: bash
+
+      # ====================================================================
+      # Upload build artifacts (WASM files, JS glue code, HTML)
+      # ====================================================================
+      - name: Upload WASM Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-wasm-${{ matrix.build-type }}
+
+          path: |
+            build/${{ matrix.preset }}/**/*.wasm
+            build/${{ matrix.preset }}/**/*.js
+            build/${{ matrix.preset }}/**/*.html
+          retention-days: 14
+          if-no-files-found: warn

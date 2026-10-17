@@ -333,6 +333,29 @@
                 "lhs": "${hostSystemName}",
                 "rhs": "Linux"
             }
+        },
+        {
+            "name": "wasm-base",
+            "hidden": true,
+            "inherits": "base",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": {
+                    "type": "FILEPATH",
+                    "value": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+                },
+                "CMAKE_PREFIX_PATH": "/opt/qt/6.10.2/wasm_multithread;/opt/exiv2;/opt/oiio;/opt/spdlog-wasm",
+                "CMAKE_EXE_LINKER_FLAGS": "-sALLOW_MEMORY_GROWTH=1 -sMAX_WEBGL_VERSION=2 -sUSE_WEBGL2=1"
+            }
+        },
+        {
+            "name": "release-ninja-wasm",
+            "displayName": "Release (Ninja - WebAssembly)",
+            "description": "Release build for WebAssembly using Emscripten",
+            "inherits": "wasm-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         }
     ],
     "buildPresets": [
@@ -455,6 +478,11 @@
             "name": "debug-ninja-linux",
             "configurePreset": "debug-ninja-linux",
             "displayName": "Build Debug (Ninja - Linux)"
+        },
+        {
+            "name": "release-ninja-wasm",
+            "configurePreset": "release-ninja-wasm",
+            "displayName": "Build Release (Ninja - WebAssembly)"
         }
     ],
     "testPresets": [
