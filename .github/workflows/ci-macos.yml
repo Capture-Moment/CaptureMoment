@@ -182,6 +182,7 @@
            cmake \
            --preset ${{ matrix.preset }} \
            -Ddesktop_ui=ON \
+           -Dsanitizers=ON \
            ${TESTS_FLAG} \
            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
            -DHALIDE_DIR="${HALIDE_CMAKE_DIR}" \

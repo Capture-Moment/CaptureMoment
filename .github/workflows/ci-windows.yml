@@ -111,7 +111,7 @@ jobs:
         uses: lukka/run-cmake@v10
         with:
           configurePreset: '${{ matrix.preset }}'
-          configurePresetAdditionalArgs: "['-Ddesktop_ui=ON','-Dtests=OFF']" # Turn On Tests afters
+          configurePresetAdditionalArgs: "['-Ddesktop_ui=ON','-Dtests=OFF', '-Dsanitizers=ON']"
           buildPreset: '${{ matrix.preset }}'
           buildPresetAdditionalArgs: "['--config ${{ matrix.build-type }}']"
         # testPreset: '${{ matrix.preset }}'
