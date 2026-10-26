@@ -115,6 +115,14 @@ jobs:
           buildPreset: '${{ matrix.preset }}'
           buildPresetAdditionalArgs: "['--config ${{ matrix.build-type }}']"
 
+      # ====================================================================
+      # Setup MSVC environment for the test
+      # ====================================================================
+      - name: Setup MSVC environment
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: x64
+
       - name: Run Tests
         run: 
           $crt = (Get-Item "$env:VCToolsRedistDir\debug_nonredist\x64\Microsoft.VC14*.DebugCRT" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName;
