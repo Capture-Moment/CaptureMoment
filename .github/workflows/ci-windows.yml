@@ -140,7 +140,7 @@ jobs:
         with:
           name: test-results-${{ matrix.preset }}
           path: test-results-${{ matrix.preset }}.xml
-          if-no-files-found: ignore
+          if-no-files-found: warn
           retention-days: 1
         
       # ====================================================================
@@ -157,7 +157,7 @@ jobs:
             build/${{ matrix.build-type }}/*.lib
             build/${{ matrix.build-type }}/*.dll
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
   # ====================================================================
   # Publish test results

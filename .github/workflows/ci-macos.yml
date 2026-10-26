@@ -216,7 +216,7 @@
           with:
             name: test-results-${{ matrix.preset }}
             path: test-results-${{ matrix.preset }}.xml
-            if-no-files-found: ignore
+            if-no-files-found: warn
             retention-days: 1
 
         # ====================================================================
