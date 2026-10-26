@@ -111,11 +111,12 @@ jobs:
         uses: lukka/run-cmake@v10
         with:
           configurePreset: '${{ matrix.preset }}'
-          configurePresetAdditionalArgs: "['-Ddesktop_ui=ON','-Dtests=OFF', '-Dsanitizers=ON']"
+          configurePresetAdditionalArgs: "['-Ddesktop_ui=ON','-Dtests=ON', '-Dsanitizers=ON']"
           buildPreset: '${{ matrix.preset }}'
           buildPresetAdditionalArgs: "['--config ${{ matrix.build-type }}']"
-        # testPreset: '${{ matrix.preset }}'
-        # testPresetAdditionalArgs: "['--config ${{ matrix.build-type }}', '--output-on-failure']"
+      - name: Run Tests
+        run: ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore
+        shell: pwsh
 
       # ====================================================================
       # Upload build artifacts

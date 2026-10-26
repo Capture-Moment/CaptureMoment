@@ -170,7 +170,7 @@
         # ====================================================================
         - name: Configure CMake
           run: |
-           TESTS_FLAG="-Dtests=OFF"
+           TESTS_FLAG="-Dtests=ON"
 
            if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
              TESTS_FLAG="-Dtests=ON"
@@ -204,7 +204,7 @@
         - name: Run Tests
           run: |
            cd build/${{ matrix.preset }}
-           ctest --output-on-failure -C ${{ matrix.build-type }}
+           ctest --output-on-failure -C ${{ matrix.build-type }} --no-tests=ignore
           shell: bash
 
         # ====================================================================

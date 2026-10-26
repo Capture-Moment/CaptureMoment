@@ -119,7 +119,7 @@ jobs:
         if: ${{ always() && steps.configure.outcome == 'success' }}
         run: |
           cd build/${{ matrix.preset }}
-          ctest --output-on-failure -C ${{ matrix.build-type }}
+            ctest --output-on-failure -C ${{ matrix.build-type }} --no-tests=ignore
         shell: bash
 
       # ====================================================================
