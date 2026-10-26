@@ -55,7 +55,7 @@ static_assert(CaptureMoment::Core::Common::MutableImageLike<ImageRegion>,
  * @test The allocation constructor (w, h, ch) reserves exactly
  *       width*height*channels floats and produces a valid region.
  */
-TEST(ImageRegion, AllocationConstructorAllocatesExactSize)
+TEST(ImageRegionTest, AllocationConstructorAllocatesExactSize)
 {
     const ImageRegion region(8, 6, 4); // buffer intentionally uninitialized
 
@@ -70,7 +70,7 @@ TEST(ImageRegion, AllocationConstructorAllocatesExactSize)
  * @test The default constructor creates an empty, invalid region
  *       (documented contract).
  */
-TEST(ImageRegion, DefaultConstructorIsInvalid)
+TEST(ImageRegionTest, DefaultConstructorIsInvalid)
 {
     const ImageRegion region; // 0x0x0, empty buffer
     EXPECT_FALSE(region.isValid());
@@ -80,7 +80,7 @@ TEST(ImageRegion, DefaultConstructorIsInvalid)
  * @test The move constructor accepts tile coordinates (x, y) and the
  *       format defaults to RGBA_F32.
  */
-TEST(ImageRegion, ConstructorInitializesCoordinatesAndFormat)
+TEST(ImageRegionTest, ConstructorInitializesCoordinatesAndFormat)
 {
     std::vector<float> data(4 * 4 * 4, 0.0f);
     const ImageRegion tile(std::move(data), 4, 4, 4, /*x=*/2, /*y=*/3);
@@ -94,7 +94,7 @@ TEST(ImageRegion, ConstructorInitializesCoordinatesAndFormat)
  * @test The move constructor produces a valid, correctly sized region:
  *       ownership of the vector is transferred, no copy is made.
  */
-TEST(ImageRegion, MoveConstructorProducesValidRegion)
+TEST(ImageRegionTest, MoveConstructorProducesValidRegion)
 {
     std::vector<float> data(64 * 64 * 4, 0.5f);
     const ImageRegion region(std::move(data), 64, 64, 4);
@@ -110,7 +110,7 @@ TEST(ImageRegion, MoveConstructorProducesValidRegion)
  * @test Constructing from a non-owning span copies the data: later
  *       modifications of the source buffer must not leak into the region.
  */
-TEST(ImageRegion, SpanConstructorCopiesSourceData)
+TEST(ImageRegionTest, SpanConstructorCopiesSourceData)
 {
     std::vector<float> source(2 * 2 * 4, 1.0f);
 
@@ -125,7 +125,7 @@ TEST(ImageRegion, SpanConstructorCopiesSourceData)
  * @test A region built from a correctly sized span is valid and exposes
  *       its geometry through the safe accessors.
  */
-TEST(ImageRegion, SpanConstructorExposesGeometry)
+TEST(ImageRegionTest, SpanConstructorExposesGeometry)
 {
     std::vector<float> data(64 * 64 * 4, 0.5f);
     const ImageRegion region(std::span<const float>{data}, 64, 64, 4);
@@ -143,7 +143,7 @@ TEST(ImageRegion, SpanConstructorExposesGeometry)
 /**
  * @test isValid() rejects zero width (branch 1 of the integrity check).
  */
-TEST(ImageRegion, ZeroWidthRegionIsInvalid)
+TEST(ImageRegionTest, ZeroWidthRegionIsInvalid)
 {
     std::vector<float> data(10 * 4, 1.0f);
     const ImageRegion region(std::move(data), 0, 10, 4);
@@ -153,7 +153,7 @@ TEST(ImageRegion, ZeroWidthRegionIsInvalid)
 /**
  * @test isValid() rejects zero height (other half of branch 1).
  */
-TEST(ImageRegion, ZeroHeightRegionIsInvalid)
+TEST(ImageRegionTest, ZeroHeightRegionIsInvalid)
 {
     std::vector<float> data(64 * 4, 1.0f);
     const ImageRegion region(std::move(data), 64, 0, 4);
@@ -163,7 +163,7 @@ TEST(ImageRegion, ZeroHeightRegionIsInvalid)
 /**
  * @test isValid() rejects a zero channel count (branch 1 of the check).
  */
-TEST(ImageRegion, ZeroChannelsRegionIsInvalid)
+TEST(ImageRegionTest, ZeroChannelsRegionIsInvalid)
 {
     // Move constructor: no allocation is driven by the dimensions,
     // so an inconsistent (w, h, ch) trio is safe to build here.
@@ -175,7 +175,7 @@ TEST(ImageRegion, ZeroChannelsRegionIsInvalid)
 /**
  * @test isValid() rejects absurd channel counts (documented guard: > 8).
  */
-TEST(ImageRegion, TooManyChannelsIsInvalid)
+TEST(ImageRegionTest, TooManyChannelsIsInvalid)
 {
     std::vector<float> data(2 * 2 * 9, 1.0f);
     const ImageRegion region(std::move(data), 2, 2, 9);
@@ -186,7 +186,7 @@ TEST(ImageRegion, TooManyChannelsIsInvalid)
  * @test ImageChan is uint8_t: a negative channel count silently wraps
  *       around (e.g. -1 becomes 255) and must fall into the > 8 guard.
  */
-TEST(ImageRegion, ChannelCountWraparoundIsInvalid)
+TEST(ImageRegionTest, ChannelCountWraparoundIsInvalid)
 {
     std::vector<float> data(10 * 4, 1.0f);
     const ImageRegion region(std::move(data), 64, 64, static_cast<ImageChan>(-1));
@@ -198,7 +198,7 @@ TEST(ImageRegion, ChannelCountWraparoundIsInvalid)
  *       to a huge value. The overflow-safe size computation must reject
  *       it (branch 2/3 of the integrity check) instead of allocating.
  */
-TEST(ImageRegion, DimensionWraparoundIsInvalid)
+TEST(ImageRegionTest, DimensionWraparoundIsInvalid)
 {
     // Move constructor again: no allocation is performed from (w, h, ch).
     std::vector<float> data(10 * 4, 1.0f);
@@ -210,7 +210,7 @@ TEST(ImageRegion, DimensionWraparoundIsInvalid)
  * @test isValid() must reject a region whose buffer size does not match
  *       width * height * channels (corrupted / inconsistent data).
  */
-TEST(ImageRegion, MismatchedDataSizeIsInvalid)
+TEST(ImageRegionTest, MismatchedDataSizeIsInvalid)
 {
     // 2 values for a 4x4x4 region: expected 64 elements
     std::vector<float> data{1.0f, 2.0f};
@@ -224,7 +224,7 @@ TEST(ImageRegion, MismatchedDataSizeIsInvalid)
  *       (remaps the "null data" case: with the vector/span API there is
  *       no null pointer, an absent buffer is an empty vector).
  */
-TEST(ImageRegion, EmptyBufferWithNonZeroDimensionsIsInvalid)
+TEST(ImageRegionTest, EmptyBufferWithNonZeroDimensionsIsInvalid)
 {
     std::vector<float> data; // empty
     const ImageRegion region(std::move(data), 64, 64, 4);
@@ -240,7 +240,7 @@ TEST(ImageRegion, EmptyBufferWithNonZeroDimensionsIsInvalid)
  *       elements, and writing through the span is visible through
  *       operator() (same underlying memory).
  */
-TEST(ImageRegion, GetBufferExposesUnderlyingData)
+TEST(ImageRegionTest, GetBufferExposesUnderlyingData)
 {
     std::vector<float> data(2 * 2 * 4, 0.0f);
     ImageRegion region(std::move(data), 2, 2, 4);
@@ -256,7 +256,7 @@ TEST(ImageRegion, GetBufferExposesUnderlyingData)
  * @test getMdSpan() exposes the same memory as a 3D mdspan indexed as
  *       (y, x, c), consistent with the Chunky layout.
  */
-TEST(ImageRegion, GetMdSpanProvidesThreeDimensionalAccess)
+TEST(ImageRegionTest, GetMdSpanProvidesThreeDimensionalAccess)
 {
     std::vector<float> data(2 * 3 * 4);
     std::iota(data.begin(), data.end(), 0.0f);
@@ -279,7 +279,7 @@ TEST(ImageRegion, GetMdSpanProvidesThreeDimensionalAccess)
  *           index(y, x, c) = (y * width + x) * channels + c
  *       [R0, G0, B0, A0, R1, G1, B1, A1, ...]
  */
-TEST(ImageRegion, PixelAccessFollowsChunkyLayout)
+TEST(ImageRegionTest, PixelAccessFollowsChunkyLayout)
 {
     std::vector<float> data(3 * 2 * 4);
     std::iota(data.begin(), data.end(), 0.0f); // 0, 1, 2, 3, 4, ...
@@ -302,7 +302,7 @@ TEST(ImageRegion, PixelAccessFollowsChunkyLayout)
  *       This is exactly how SourceManager positions a tile
  *       (see source_manager.cpp: region->m_x = ...).
  */
-TEST(ImageRegion, CoordinateMemberAssignment)
+TEST(ImageRegionTest, CoordinateMemberAssignment)
 {
     std::vector<float> data(2 * 2 * 4, 0.0f);
     ImageRegion tile(std::move(data), 2, 2, 4);
