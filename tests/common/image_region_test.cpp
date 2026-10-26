@@ -245,7 +245,7 @@ TEST(ImageRegion, GetBufferExposesUnderlyingData)
     std::vector<float> data(2 * 2 * 4, 0.0f);
     ImageRegion region(std::move(data), 2, 2, 4);
 
-    auto buffer = region.getBuffer();
+    auto buffer { region.getBuffer() };
     ASSERT_EQ(buffer.size(), 16u);
 
     buffer[0] = 0.25f;
@@ -262,11 +262,11 @@ TEST(ImageRegion, GetMdSpanProvidesThreeDimensionalAccess)
     std::iota(data.begin(), data.end(), 0.0f);
     ImageRegion region(std::move(data), 2, 3, 4); // w=2, h=3, ch=4
 
-    auto view = region.getMdSpan(); // extents: (height, width, channels)
-    EXPECT_FLOAT_EQ(view(0, 0, 0), 0.0f);
-    EXPECT_FLOAT_EQ(view(0, 1, 0), 4.0f);
-    EXPECT_FLOAT_EQ(view(1, 0, 0), 8.0f);
-    EXPECT_FLOAT_EQ(view(2, 1, 3), 23.0f); // last element
+    auto view { region.getMdSpan() }; // extents: (height, width, channels)
+    EXPECT_FLOAT_EQ((view[0, 0, 0]), 0.0f);
+    EXPECT_FLOAT_EQ((view[0, 1, 0]), 4.0f);
+    EXPECT_FLOAT_EQ((view[1, 0, 0]), 8.0f);
+    EXPECT_FLOAT_EQ((view[2, 1, 3]), 23.0f); // last element
 }
 
 // ============================================================
