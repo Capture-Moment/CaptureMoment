@@ -118,7 +118,6 @@ jobs:
       - name: Run Tests
         if: ${{ always() && steps.configure.outcome == 'success' }}
         run: |
-          cd build/${{ matrix.preset }}
           ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore --output-junit "${{ github.workspace }}/test-results-${{ matrix.preset }}.xml"
         shell: bash
 
