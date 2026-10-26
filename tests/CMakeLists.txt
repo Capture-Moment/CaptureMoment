@@ -15,6 +15,7 @@ target_link_libraries(core_tests PRIVATE
     capturemoment_core
     GTest::gtest
     GTest::gtest_main
+    GTest::gmock
 )
 
 target_compile_features(core_tests PRIVATE cxx_std_23)
