@@ -5,6 +5,7 @@ message(STATUS "Sanitizers enabled")
 if(MSVC)
     # MSVC: ASan only
     add_compile_options(/fsanitize=address)
+    add_compile_definitions(_DISABLE_STRING_ANNOTATION _DISABLE_VECTOR_ANNOTATION _DISABLE_OPTIONAL_ANNOTATION)
     add_link_options(/INCREMENTAL:NO)
 else()
     set(SAN_FLAGS
