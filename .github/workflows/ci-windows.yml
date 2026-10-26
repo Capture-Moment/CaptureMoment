@@ -115,14 +115,12 @@ jobs:
           buildPreset: '${{ matrix.preset }}'
           buildPresetAdditionalArgs: "['--config ${{ matrix.build-type }}']"
 
-      # ====================================================================
-      # Setup MSVC environment for the test
-      # ====================================================================
-      - name: Setup MSVC environment
-        uses: ilammy/msvc-dev-cmd@v1
-
       - name: Run Tests
-        run: ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore --output-junit "${{ github.workspace }}\test-results-${{ matrix.preset }}.xml"
+        run: 
+          $crt = (Get-Item "$env:VCToolsRedistDir\debug_nonredist\x64\Microsoft.VC14*.DebugCRT" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName;
+          if ($crt) { $env:PATH = "$crt;$env:PATH" };
+          $env:PATH = "$env:GITHUB_WORKSPACE\build\${{ matrix.preset }}\${{ matrix.build-type }};$env:VCPKG_ROOT\installed\x64-windows\debug\bin;$env:VCPKG_ROOT\installed\x64-windows\bin;C:\vcpkg\installed\x64-windows\debug\bin;C:\vcpkg\installed\x64-windows\bin;$env:HALIDE_ROOT\bin;$env:HALIDE_ROOT;$env:PATH";
+          ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore --output-junit "${{ github.workspace }}\test-results-${{ matrix.preset }}.xml"
         shell: pwsh
 
       # ====================================================================
