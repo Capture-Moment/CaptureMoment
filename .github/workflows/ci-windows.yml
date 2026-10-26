@@ -115,9 +115,21 @@ jobs:
           buildPreset: '${{ matrix.preset }}'
           buildPresetAdditionalArgs: "['--config ${{ matrix.build-type }}']"
       - name: Run Tests
-        run: ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore
+        run: ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore --output-junit "${{ github.workspace }}\test-results-${{ matrix.preset }}.xml"
         shell: pwsh
 
+      # ====================================================================
+      # Upload test results (JUnit)
+      # ====================================================================
+      - name: Upload test results
+        if: (!cancelled())
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.preset }}
+          path: test-results-${{ matrix.preset }}.xml
+          if-no-files-found: ignore
+          retention-days: 1
+        
       # ====================================================================
       # Upload build artifacts
       # ====================================================================
@@ -133,3 +145,34 @@ jobs:
             build/${{ matrix.build-type }}/*.dll
           retention-days: 7
           if-no-files-found: ignore
+
+  # ====================================================================
+  # Publish test results
+  # ====================================================================
+  publish-test-results:
+      name: Publish Test Results (Windows)
+      needs: build
+      runs-on: ubuntu-latest
+      if: (!cancelled())
+
+      permissions:
+        contents: read
+        checks: write
+        pull-requests: write
+
+      steps:
+        - name: Download test results
+          uses: actions/download-artifact@v7
+          with:
+            pattern: test-results-*
+            path: test-results
+            merge-multiple: true
+          continue-on-error: true
+
+        - name: Publish Test Results
+          if: hashFiles('test-results/**/*.xml') != ''
+          uses: EnricoMi/publish-unit-test-result-action@v2
+          with:
+            check_name: 'Test Results (Windows)'
+            comment_title: 'Test Results (Windows)'
+            files: test-results/**/*.xml
