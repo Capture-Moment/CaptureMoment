@@ -88,7 +88,7 @@ jobs:
           TESTS_FLAG=""
           
           if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
-            TESTS_FLAG="-DBUILD_TESTS=ON"
+            TESTS_FLAG="-Dtests=ON"
             echo "::notice file=tests::the directory 'tests' exists and is not empty. Tests enabled."
           else
             echo "::warning file=tests::the directory 'tests' is empty or missing. Tests disabled"
