@@ -98,7 +98,7 @@ jobs:
           --preset ${{ matrix.preset }} \
           -DBUILD_DESKTOP_UI:BOOL=ON \
           -DBUILD_SANITIZERS:BOOL=ON \
-          ${TESTS_FLAG} \
+          -DBUILD_TESTS:BOOL=${TESTS_FLAG} \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2"
 
