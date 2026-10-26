@@ -88,7 +88,7 @@ jobs:
           TESTS_FLAG=""
           
           if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
-            TESTS_FLAG="-Dtests=ON"
+            TESTS_FLAG="ON"
             echo "::notice file=tests::the directory 'tests' exists and is not empty. Tests enabled."
           else
             echo "::warning file=tests::the directory 'tests' is empty or missing. Tests disabled"
@@ -98,7 +98,7 @@ jobs:
           --preset ${{ matrix.preset }} \
           -DBUILD_DESKTOP_UI:BOOL=ON \
           -DBUILD_SANITIZERS:BOOL=ON \
-          ${TESTS_FLAG} \
+          -DBUILD_TESTS:BOOL=${TESTS_FLAG} \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2"
 
@@ -118,7 +118,9 @@ jobs:
       - name: Run Tests
         if: ${{ always() && steps.configure.outcome == 'success' }}
         run: |
-          ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore --output-junit "${{ github.workspace }}/test-results-${{ matrix.preset }}.xml"
+          ctest --test-dir build/${{ matrix.preset }} \
+            --output-on-failure -C ${{ matrix.build-type }} --no-tests=ignore \
+            --output-junit "$GITHUB_WORKSPACE/test-results-${{ matrix.preset }}.xml"
         shell: bash
 
       # ====================================================================
@@ -130,7 +132,7 @@ jobs:
         with:
           name: test-results-${{ matrix.preset }}
           path: test-results-${{ matrix.preset }}.xml
-          if-no-files-found: ignore
+          if-no-files-found: warn
           retention-days: 1
         
       # ====================================================================
