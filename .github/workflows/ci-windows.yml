@@ -114,6 +114,13 @@ jobs:
           configurePresetAdditionalArgs: "['-Ddesktop_ui=ON','-Dtests=ON', '-Dsanitizers=ON']"
           buildPreset: '${{ matrix.preset }}'
           buildPresetAdditionalArgs: "['--config ${{ matrix.build-type }}']"
+
+      # ====================================================================
+      # Setup MSVC environment for the test
+      # ====================================================================
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Run Tests
         run: ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore --output-junit "${{ github.workspace }}\test-results-${{ matrix.preset }}.xml"
         shell: pwsh
