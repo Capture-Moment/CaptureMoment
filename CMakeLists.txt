@@ -39,25 +39,19 @@ option(sanitizers "Alias for BUILD_SANITIZERS" OFF)
 option(benchmarks "Alias for BUILD_BENCHMARKS" OFF)
 option(examples "Alias for BUILD_EXAMPLES" OFF)
 
-# Synchronize aliases
-if(sanitizers)
-    set(BUILD_SANITIZERS ON)
-endif()
-if(desktop_ui)
-    set(BUILD_DESKTOP_UI ON)
-endif()
-if(mobile_ui)
-    set(BUILD_MOBILE_UI ON)
-endif()
-if(tests)
-    set(BUILD_TESTS ON)
-endif()
-if(benchmarks)
-    set(BUILD_BENCHMARKS ON)
-endif()
-if(examples)
-    set(BUILD_EXAMPLES ON)
-endif()
+function(sync_alias alias target)
+    if(${alias})
+        set(${target} ON CACHE BOOL "" FORCE)
+    endif()
+endfunction()
+
+
+sync_alias(desktop_ui  BUILD_DESKTOP_UI)
+sync_alias(mobile_ui   BUILD_MOBILE_UI)
+sync_alias(tests       BUILD_TESTS)
+sync_alias(sanitizers  BUILD_SANITIZERS)
+sync_alias(benchmarks  BUILD_BENCHMARKS)
+sync_alias(examples    BUILD_EXAMPLES)
 
 # ============================================================
 # Configuration Qt file generation
