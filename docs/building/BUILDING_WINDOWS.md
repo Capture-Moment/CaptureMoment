@@ -24,56 +24,64 @@ $env:VCPKG_BINARY_SOURCES = "clear;files,C:\vcpkg_cache"
 ```
 ---
 ## 🚀 Building the Project
+Use the **Native Tools Command Prompt for VS**
+
 We recommend using CMake Presets which automatically configure the correct generators and Vcpkg triplets. Don't forget to enable the UI with **-Ddesktop_ui=ON** if you want to compile also the ui
 You can check [**The Main building**](../BUILDING_MAIN.md) to see all options
 
 ### Option A: Only the Core
+
 **Optimized Mode (Release only) :** (Uses the custom x64-windows-release triplet for time/space saving)
 
 ```PowerShell
 cmake --preset release-vcpkg-msvc
-cmake --build build/release-vcpkg-msvc
+cmake --build --preset release-vcpkg-msvc
 # or
 cmake --preset release-vcpkg-mingw
-cmake --build build/release-vcpkg-mingw
-
+cmake --build --preset release-vcpkg-mingw
 ```
 
 For Full Development (Debug):
 ```PowerShell
 cmake --preset debug-vcpkg-msvc
-cmake --build build/debug-vcpkg-msvc
+cmake --build --preset debug-vcpkg-msvc
 ```
 
-### Option B: With Qt Desktop
+### Option B: With Qt Desktop GUI
 
-#### If you have Qt and you don't want to recompile again
+#### If you have Qt
 
 ```PowerShell
-cmake --preset release-vcpkg-msvc -DHALIDE_DIR=/path/to/halide(cmake) -Ddesktop_ui="ON"
-cmake --build build/release-vcpkg-msvc
+cmake --preset release-vcpkg-msvc -Ddesktop_ui="ON"
+cmake --build --preset release-vcpkg-msvc
 # or
-cmake --preset release-vcpkg-mingw -DHALIDE_DIR=/path/to/halide(cmake) -Ddesktop_ui="ON"
-cmake --build build/release-vcpkg-mingw
+cmake --preset release-vcpkg-mingw  -Ddesktop_ui="ON"
+cmake --build --preset release-vcpkg-mingw
 ```
 
 #### If you don't have Qt
 ```PowerShell
 cmake --preset release-vcpkg-msvc-desktop
-cmake --build build/release-vcpkg-msvc-desktop
+cmake --build --preset release-vcpkg-msvc-desktop
 # or
 cmake --preset release-vcpkg-mingw-desktop
-cmake --build build/release-vcpkg-mingw
+cmake --build --preset release-vcpkg-mingw
 ```
-
-### Option C: IDE
-Don't forget to use -DHALIDE_DIR=/path/to/halide(cmake) of your IDE build to add the path of Halide
 
 #### Qt Creator
 Open the root CMakeLists.txt with Qt Creator and choose the build vcpkg core msvc or mingw (with no desktop). And when you are in the pannel of the configuration, activate BUILD_DESKTOP_UI to ON
 
 #### Visual Studio
 Not configured at yet
+
+## Custom Halide Path
+```PowerShell
+cmake --preset release-vcpkg-msvc -DHALIDE_DIR=/path/to/halide(cmake)
+cmake --build --preset release-vcpkg-msvc
+# or
+cmake --preset release-vcpkg-mingw -DHALIDE_DIR=/path/to/halide(cmake)
+cmake --build --preset release-vcpkg-mingw
+```
 
 ---
 ## 🔍 Available Windows Presets
