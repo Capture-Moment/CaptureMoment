@@ -1,0 +1,37 @@
+# .github/workflows/publish-tests.yml
+name: Publish Test Results
+
+on:
+  workflow_run:
+    workflows:
+      - "CI Linux (Ninja + GHCR)"
+      - "CI macOS (Homebrew + Clang)"
+      - "CI Windows (vcpkg + MSVC)"
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v7
+        with:
+          pattern: test-results-*
+          path: test-results
+          merge-multiple: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          commit: ${{ github.event.workflow_run.head_sha }}
+          check_name: Test Results (${{ github.event.workflow_run.name }})
+          comment_title: Test Results (${{ github.event.workflow_run.name }})
+          files: test-results/**/*.xml
