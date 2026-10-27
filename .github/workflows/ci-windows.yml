@@ -1,3 +1,5 @@
+# .github/workflows/ci-windows.yml
+# Do not modify the name directly.
 name: CI Windows (vcpkg + MSVC)
 
 on:
@@ -111,12 +113,38 @@ jobs:
         uses: lukka/run-cmake@v10
         with:
           configurePreset: '${{ matrix.preset }}'
-          configurePresetAdditionalArgs: "['-Ddesktop_ui=ON','-Dtests=OFF']" # Turn On Tests afters
+          configurePresetAdditionalArgs: "['-Ddesktop_ui=ON','-Dtests=ON', '-Dsanitizers=ON']"
           buildPreset: '${{ matrix.preset }}'
           buildPresetAdditionalArgs: "['--config ${{ matrix.build-type }}']"
-        # testPreset: '${{ matrix.preset }}'
-        # testPresetAdditionalArgs: "['--config ${{ matrix.build-type }}', '--output-on-failure']"
 
+      # ====================================================================
+      # Setup MSVC environment for the test
+      # ====================================================================
+      - name: Setup MSVC environment
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: x64
+
+      - name: Run Tests
+        run: 
+          $crt = (Get-Item "$env:VCToolsRedistDir\debug_nonredist\x64\Microsoft.VC14*.DebugCRT" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName;
+          if ($crt) { $env:PATH = "$crt;$env:PATH" };
+          $env:PATH = "$env:GITHUB_WORKSPACE\build\${{ matrix.preset }}\${{ matrix.build-type }};$env:VCPKG_ROOT\installed\x64-windows\debug\bin;$env:VCPKG_ROOT\installed\x64-windows\bin;C:\vcpkg\installed\x64-windows\debug\bin;C:\vcpkg\installed\x64-windows\bin;$env:HALIDE_ROOT\bin;$env:HALIDE_ROOT;$env:PATH";
+          ctest --test-dir build/${{ matrix.preset }} -C ${{ matrix.build-type }} --output-on-failure --no-tests=ignore --output-junit "${{ github.workspace }}\test-results-${{ matrix.preset }}.xml"
+        shell: pwsh
+
+      # ====================================================================
+      # Upload test results (JUnit)
+      # ====================================================================
+      - name: Upload test results
+        if: (!cancelled())
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.preset }}
+          path: test-results-${{ matrix.preset }}.xml
+          if-no-files-found: warn
+          retention-days: 1
+        
       # ====================================================================
       # Upload build artifacts
       # ====================================================================
@@ -131,4 +159,20 @@ jobs:
             build/${{ matrix.build-type }}/*.lib
             build/${{ matrix.build-type }}/*.dll
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: warn
+
+
+
+#=====================================================================
+# Publish Test Results
+#=====================================================================
+  publish-tests:
+    needs: build
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    uses: ./.github/workflows/publish-tests.yml
+    with:
+      name: Windows

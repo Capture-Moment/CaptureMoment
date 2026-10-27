@@ -1,3 +1,5 @@
+# .github/workflows/ci-linux.yml
+# Do not modify the name directly.
 name: CI Linux (Ninja + GHCR)
 
 on:
@@ -88,7 +90,7 @@ jobs:
           TESTS_FLAG=""
           
           if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
-            TESTS_FLAG="-DBUILD_TESTS=ON"
+            TESTS_FLAG="ON"
             echo "::notice file=tests::the directory 'tests' exists and is not empty. Tests enabled."
           else
             echo "::warning file=tests::the directory 'tests' is empty or missing. Tests disabled"
@@ -97,7 +99,8 @@ jobs:
           cmake \
           --preset ${{ matrix.preset }} \
           -DBUILD_DESKTOP_UI:BOOL=ON \
-          ${TESTS_FLAG} \
+          -DBUILD_SANITIZERS:BOOL=ON \
+          -DBUILD_TESTS:BOOL=${TESTS_FLAG} \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2"
 
@@ -117,9 +120,22 @@ jobs:
       - name: Run Tests
         if: ${{ always() && steps.configure.outcome == 'success' }}
         run: |
-          cd build/${{ matrix.preset }}
-          ctest --output-on-failure -C ${{ matrix.build-type }}
+          ctest --test-dir build/${{ matrix.preset }} \
+            --output-on-failure -C ${{ matrix.build-type }} --no-tests=ignore \
+            --output-junit "$GITHUB_WORKSPACE/test-results-${{ matrix.preset }}.xml"
         shell: bash
+
+      # ====================================================================
+      # Upload test results (JUnit)
+      # ====================================================================
+      - name: Upload test results
+        if: (!cancelled())
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.preset }}
+          path: test-results-${{ matrix.preset }}.xml
+          if-no-files-found: warn
+          retention-days: 1
 
       # ====================================================================
       # Upload build artifacts
@@ -133,3 +149,19 @@ jobs:
             build/${{ matrix.preset }}/CaptureMoment
           retention-days: 7
           if-no-files-found: warn
+
+
+
+#=====================================================================
+# Publish Test Results
+#=====================================================================
+  publish-tests:
+    needs: build
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    uses: ./.github/workflows/publish-tests.yml
+    with:
+      name: Linux

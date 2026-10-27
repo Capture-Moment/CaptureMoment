@@ -4,6 +4,7 @@
 # Download CPM.cmake automatically if not present
 # ============================================================
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
+
     message(STATUS "Downloading CPM.cmake...")
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/cmake")
     file(DOWNLOAD
@@ -11,6 +12,7 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
         "${CMAKE_BINARY_DIR}/cmake/CPM.cmake"
         TLS_VERIFY ON
     )
+
 endif()
 
 include("${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
@@ -20,12 +22,13 @@ message(STATUS "Using CPM.cmake from: ${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
 # Find all required packages
 # ============================================================
 function(find_required_packages)
+
     # spdlog (mandatory)
     find_spdlog_package()
 
     # OpenImageIO (mandatory)
     find_openimageio_package()
-    
+
     # Halide (mandatory)
     find_halide_package()
 
@@ -34,11 +37,17 @@ function(find_required_packages)
 
     # magic_enum (mandatory)
     find_magic_enum_package()
-    
+
+    if(BUILD_TESTS)
+        find_gtest_package()
+    endif()
+
+
     # Qt6 will be searched by the sub-projects ui/desktop, ui/mobile
 
     summarize_found_packages()
     warn_halide_requirements()
+
 endfunction()
 
 
@@ -46,6 +55,7 @@ endfunction()
 # Find spdlog
 # ============================================================
 function(find_spdlog_package)
+
     message(STATUS "Searching for spdlog...")
 
     # Attempt CONFIG (vcpkg, Conan)
@@ -69,6 +79,7 @@ endfunction()
 # Find OpenImageIO
 # ============================================================
 function(find_openimageio_package)
+
     message(STATUS "Searching for OpenImageIO...")
     
     # Attempt CONFIG (vcpkg, Conan)
@@ -92,6 +103,7 @@ endfunction()
 # Find Halide
 # ============================================================
 function(find_halide_package)
+
     message(STATUS "Searching for Halide...")
     
     if(HALIDE_DIR)
@@ -128,6 +140,7 @@ endfunction()
 # Find magic_enum
 # ============================================================
 function(find_magic_enum_package)
+
     message(STATUS "Fetching magic_enum v0.9.7 via CPM")
 
     CPMAddPackage(
@@ -144,11 +157,11 @@ function(find_magic_enum_package)
     endif()
 endfunction()
 
-
 # ============================================================
 # Find Exiv2
 # ============================================================
 function(find_exiv2_package)
+
     message(STATUS "Searching for Exiv2...")
 
     # Attempt CONFIG (This looks for exiv2-config.cmake or Exiv2Config.cmake)
@@ -166,6 +179,28 @@ function(find_exiv2_package)
 
 endfunction()
 
+#============================================================
+# Find GTest
+#============================================================
+function(find_gtest_package)
+
+    message(STATUS "Fetching GTest via CPM")
+    CPMAddPackage(
+      NAME GTest
+      URL https://github.com/google/googletest/releases/download/v1.18.0/googletest-1.18.0.tar.gz
+      VERSION 1.18.0
+      OPTIONS
+        "gtest_force_shared_crt ON"
+        "INSTALL_GTEST OFF"
+    )
+    if(TARGET GTest::gtest)
+      set(GTest_FOUND TRUE PARENT_SCOPE)
+      set(GTest_VERSION "1.18.0" PARENT_SCOPE)
+    else()
+      message(FATAL_ERROR "GTest::gtest target not found after CPMAddPackage.")
+    endif()
+
+endfunction()
 # ============================================================
 # Summary of all found packages
 # ============================================================
@@ -203,6 +238,11 @@ function(summarize_found_packages)
     else()
         message(STATUS "║ magic_enum : Not Found")
     endif()
+    if(GTest_FOUND)
+        message(STATUS "║ GTest : ${GTest_VERSION}")
+    else()
+        message(STATUS "║ GTest : Not Found or not needed (tests disabled)")
+    endif()
 
     message(STATUS "╚════════════════════════════════════════════════════════════╝")
     message(STATUS "")
@@ -215,6 +255,7 @@ function(summarize_found_packages)
     message(STATUS "║ Halide : 21.0.0")
     message(STATUS "║ Exiv2 : 0.28.7")
     message(STATUS "║ magic_enum : 0.9.7")
+    message(STATUS "║ GTest : 1.18.0")
     message(STATUS "╚════════════════════════════════════════════════════════════╝")
     message(STATUS "")
 endfunction()

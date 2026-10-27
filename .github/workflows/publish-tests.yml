@@ -1,0 +1,32 @@
+name: Publish Test Results
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: "Linux, macOS, Windows"
+        type: string
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v7
+        with:
+          pattern: test-results-*
+          path: test-results
+          merge-multiple: true
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_run: false
+          check_name: Test Results (${{ inputs.name }})
+          comment_title: Test Results (${{ inputs.name }})
+          files: test-results/**/*.xml
