@@ -16,6 +16,8 @@ target_link_libraries(core_tests PRIVATE
     GTest::gtest
     GTest::gtest_main
     GTest::gmock
+
+    OpenImageIO::OpenImageIO
 )
 
 target_compile_features(core_tests PRIVATE cxx_std_23)
