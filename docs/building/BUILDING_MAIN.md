@@ -52,10 +52,15 @@ If you want to build the Desktop UI. Please follow the dedicated guide to instal
 ### 3. Setup Dependencies & Compile
 Click the link for your OS for detailed instructions:
 
-* [🟦 **Windows**](./guidelines/BUILDING_WINDOWS.md).
-* [🐧 **Linux**](./guidelines/BUILDING_LINUX.md) (Ubuntu, Fedora, Arch).
-* [🍎 **macOS**](./guidelines/BUILDING_MACOS.md) (Homebrew and Xcode).
+* [🟦 **Windows**](BUILDING_WINDOWS.md).
+* [🐧 **Linux**](/BUILDING_LINUX.md) (Ubuntu, Fedora, Arch).
+* [🍎 **macOS**](/BUILDING_MACOS.md) (Homebrew and Xcode).
 
+### 4. Run the tests
+See the follow guide
+
+* [🛠️ **Tests**](../TESTS.md).
+* 
 ## Understood the core 
 
 * [**The Core**](../architecture/CORE_DESIGN.md) (You can see the design patterns used for the core).
