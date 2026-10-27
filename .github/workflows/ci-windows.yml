@@ -1,3 +1,5 @@
+# .github/workflows/ci-windows.yml
+# Do not modify the name directly.
 name: CI Windows (vcpkg + MSVC)
 
 on:
@@ -158,34 +160,3 @@ jobs:
             build/${{ matrix.build-type }}/*.dll
           retention-days: 7
           if-no-files-found: warn
-
-  # ====================================================================
-  # Publish test results
-  # ====================================================================
-  publish-test-results:
-      name: Publish Test Results (Windows)
-      needs: build
-      runs-on: ubuntu-latest
-      if: (!cancelled())
-
-      permissions:
-        contents: read
-        checks: write
-        pull-requests: write
-
-      steps:
-        - name: Download test results
-          uses: actions/download-artifact@v7
-          with:
-            pattern: test-results-*
-            path: test-results
-            merge-multiple: true
-          continue-on-error: true
-
-        - name: Publish Test Results
-          if: hashFiles('test-results/**/*.xml') != ''
-          uses: EnricoMi/publish-unit-test-result-action@v2
-          with:
-            check_name: 'Test Results (Windows)'
-            comment_title: 'Test Results (Windows)'
-            files: test-results/**/*.xml

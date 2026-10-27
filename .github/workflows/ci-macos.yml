@@ -1,3 +1,5 @@
+# .github/workflows/ci-macos.yml
+# Do not modify the name directly.
   name: CI macOS (Homebrew + Clang)
 
   on:
@@ -232,35 +234,3 @@
              build/${{ matrix.preset }}/qt/desktop/*.app
            retention-days: 7
            if-no-files-found: warn
-
-  # ====================================================================
-  # Publish test results
-  # ====================================================================
-    publish-test-results:
-      name: Publish Test Results (macOS)
-      needs: build
-      runs-on: ubuntu-latest
-      if: (!cancelled())
-
-      permissions:
-        contents: read
-        checks: write
-        pull-requests: write
-
-      steps:
-        - name: Download test results
-          uses: actions/download-artifact@v7
-          with:
-            pattern: test-results-*
-            path: test-results
-            merge-multiple: true
-          continue-on-error: true
-
-        - name: Publish Test Results
-          if: hashFiles('test-results/**/*.xml') != ''
-          uses: EnricoMi/publish-unit-test-result-action@v2
-          with:
-            check_name: 'Test Results (macOS)'
-            comment_title: 'Test Results (macOS)'
-            files: test-results/**/*.xml
-  

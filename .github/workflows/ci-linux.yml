@@ -1,3 +1,5 @@
+# .github/workflows/ci-linux.yml
+# Do not modify the name directly.
 name: CI Linux (Ninja + GHCR)
 
 on:
@@ -134,7 +136,7 @@ jobs:
           path: test-results-${{ matrix.preset }}.xml
           if-no-files-found: warn
           retention-days: 1
-        
+
       # ====================================================================
       # Upload build artifacts
       # ====================================================================
@@ -147,34 +149,3 @@ jobs:
             build/${{ matrix.preset }}/CaptureMoment
           retention-days: 7
           if-no-files-found: warn
-
-  # ====================================================================
-  # Publish test results
-  # ====================================================================
-  publish-test-results:
-    name: Publish Test Results (Linux)
-    needs: build
-    runs-on: ubuntu-latest
-    if: (!cancelled())
-
-    permissions:
-      contents: read
-      checks: write
-      pull-requests: write
-
-    steps:
-      - name: Download test results
-        uses: actions/download-artifact@v7
-        with:
-          pattern: test-results-*
-          path: test-results
-          merge-multiple: true
-        continue-on-error: true
-
-      - name: Publish Test Results
-        if: hashFiles('test-results/**/*.xml') != ''
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          check_name: 'Test Results (Linux)'
-          comment_title: 'Test Results (Linux)'
-          files: test-results/**/*.xml
