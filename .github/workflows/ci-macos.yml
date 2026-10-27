@@ -234,3 +234,18 @@ jobs:
             build/${{ matrix.preset }}/qt/desktop/*.app
           retention-days: 7
           if-no-files-found: warn
+
+
+#=====================================================================
+# Publish Test Results
+#=====================================================================
+  publish-tests:
+    needs: build
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    uses: ./.github/workflows/publish-tests.yml
+    with:
+      name: macOS
