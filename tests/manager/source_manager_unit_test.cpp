@@ -49,7 +49,7 @@ using CaptureMoment::Core::Managers::SourceManager;
  *        manager, nothing loaded, no filesystem activity.
  */
 
-class SourceManagerUnitTest: public ::testing::Test
+class SourceManagerTest: public ::testing::Test
 {
     protected:
         SourceManager m_manager; // one fresh manager per test
@@ -61,7 +61,7 @@ class SourceManagerUnitTest: public ::testing::Test
 /**
  * @test A freshly constructed manager reports no loaded image.
  */
-TEST_F(SourceManagerUnitTest, FreshManagerIsNotLoaded)
+TEST_F(SourceManagerTest, FreshManagerIsNotLoaded)
 {
     EXPECT_FALSE(m_manager.isLoaded());
 }
@@ -70,7 +70,7 @@ TEST_F(SourceManagerUnitTest, FreshManagerIsNotLoaded)
  * @test Without a loaded image, the dimension accessors return 0
  *       (documented contract of ISourceManager).
  */
-TEST_F(SourceManagerUnitTest, FreshManagerReportsZeroDimensions)
+TEST_F(SourceManagerTest, FreshManagerReportsZeroDimensions)
 {
     EXPECT_EQ(m_manager.width(), 0u);
     EXPECT_EQ(m_manager.height(), 0u);
@@ -80,7 +80,7 @@ TEST_F(SourceManagerUnitTest, FreshManagerReportsZeroDimensions)
 /**
  * @test The source path is empty until a load succeeds.
  */
-TEST_F(SourceManagerUnitTest, FreshManagerHasEmptySourcePath)
+TEST_F(SourceManagerTest, FreshManagerHasEmptySourcePath)
 {
     EXPECT_EQ(m_manager.getImageSourcePath(), std::string());
 }
@@ -93,7 +93,7 @@ TEST_F(SourceManagerUnitTest, FreshManagerHasEmptySourcePath)
  * @test An empty path is rejected with FileNotFound before any state is
  *       touched: the manager stays unloaded.
  */
-TEST_F(SourceManagerUnitTest, LoadFileWithEmptyPathReturnsFileNotFound)
+TEST_F(SourceManagerTest, LoadFileWithEmptyPathReturnsFileNotFound)
 {
     const auto result { m_manager.loadFile("") };
 
@@ -106,7 +106,7 @@ TEST_F(SourceManagerUnitTest, LoadFileWithEmptyPathReturnsFileNotFound)
  * @test A rejected loadFile("") leaves the whole observable state
  *       untouched (no path, no dimensions).
  */
-TEST_F(SourceManagerUnitTest, LoadFileWithEmptyPathDoesNotChangeState)
+TEST_F(SourceManagerTest, LoadFileWithEmptyPathDoesNotChangeState)
 {
     const auto result { m_manager.loadFile("") };
 
@@ -125,7 +125,7 @@ TEST_F(SourceManagerUnitTest, LoadFileWithEmptyPathDoesNotChangeState)
 /**
  * @test unload() on a manager that never loaded anything is a safe no-op.
  */
-TEST_F(SourceManagerUnitTest, UnloadWithoutImageIsSafeNoOp)
+TEST_F(SourceManagerTest, UnloadWithoutImageIsSafeNoOp)
 {
     m_manager.unload();
 
@@ -136,7 +136,7 @@ TEST_F(SourceManagerUnitTest, UnloadWithoutImageIsSafeNoOp)
 /**
  * @test unload() is idempotent: calling it twice keeps the state clean.
  */
-TEST_F(SourceManagerUnitTest, UnloadIsIdempotent)
+TEST_F(SourceManagerTest, UnloadIsIdempotent)
 {
     m_manager.unload();
     m_manager.unload();
@@ -154,7 +154,7 @@ TEST_F(SourceManagerUnitTest, UnloadIsIdempotent)
 /**
  * @test getTile() without a loaded image fails with SourceNotLoaded.
  */
-TEST_F(SourceManagerUnitTest, GetTileWithoutLoadedImageReturnsSourceNotLoaded)
+TEST_F(SourceManagerTest, GetTileWithoutLoadedImageReturnsSourceNotLoaded)
 {
     const auto result { m_manager.getTile(0, 0, 16, 16) };
 
@@ -167,7 +167,7 @@ TEST_F(SourceManagerUnitTest, GetTileWithoutLoadedImageReturnsSourceNotLoaded)
  *       manager still reports SourceNotLoaded - the loaded-check runs
  *       BEFORE the size-check in getTile().
  */
-TEST_F(SourceManagerUnitTest, GetTileZeroSizeWithoutLoadedImageStillReturnsSourceNotLoaded)
+TEST_F(SourceManagerTest, GetTileZeroSizeWithoutLoadedImageStillReturnsSourceNotLoaded)
 {
     const auto result { m_manager.getTile(0, 0, 0, 0) };
 
@@ -178,7 +178,7 @@ TEST_F(SourceManagerUnitTest, GetTileZeroSizeWithoutLoadedImageStillReturnsSourc
 /**
  * @test setTile() without a loaded image fails with SourceNotLoaded.
  */
-TEST_F(SourceManagerUnitTest, SetTileWithoutLoadedImageReturnsSourceNotLoaded)
+TEST_F(SourceManagerTest, SetTileWithoutLoadedImageReturnsSourceNotLoaded)
 {
     std::vector<float> data(8 * 8 * 4, 0.5f);
     const ImageRegion tile(std::move(data), 8, 8, 4);
@@ -195,7 +195,7 @@ TEST_F(SourceManagerUnitTest, SetTileWithoutLoadedImageReturnsSourceNotLoaded)
  *       reports SourceNotLoaded - the loaded-check runs BEFORE the
  *       isValid() check in setTile().
  */
-TEST_F(SourceManagerUnitTest, SetTileInvalidRegionWithoutLoadedImageStillReturnsSourceNotLoaded)
+TEST_F(SourceManagerTest, SetTileInvalidRegionWithoutLoadedImageStillReturnsSourceNotLoaded)
 {
     // 2 values for an 8x8x4 region: isValid() == false
     std::vector<float> data{1.0f, 2.0f};
@@ -212,7 +212,7 @@ TEST_F(SourceManagerUnitTest, SetTileInvalidRegionWithoutLoadedImageStillReturns
  * @test getMetadata() without a loaded image returns nullopt for any key
  *       (no spec to query, no throw).
  */
-TEST_F(SourceManagerUnitTest, GetMetadataWithoutLoadedImageReturnsNullopt)
+TEST_F(SourceManagerTest, GetMetadataWithoutLoadedImageReturnsNullopt)
 {
     EXPECT_FALSE(m_manager.getMetadata("anything").has_value());
 }
