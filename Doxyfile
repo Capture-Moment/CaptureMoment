@@ -220,3 +220,13 @@ EXTERNAL_PAGES         = YES
 PERL_PATH              = /usr/bin/perl
 MSCGEN_PATH            =
 DIA_PATH               =
+
+# ------------------------------------------------------------------
+# Modern theme
+# ------------------------------------------------------------------
+HTML_EXTRA_STYLESHEET  = docs/theme/doxygen-awesome/doxygen-awesome.css \
+                         docs/theme/doxygen-awesome/doxygen-awesome-sidebar-only.css \
+                         docs/theme/doxygen-awesome/doxygen-awesome-sidebar-only-darkmode-toggle.css
+HTML_EXTRA_FILES       = docs/theme/doxygen-awesome/doxygen-awesome-darkmode-toggle.js \
+                         docs/theme/doxygen-awesome/doxygen-awesome-fragment-copy-button.js
+HTML_FOOTER            = docs/theme/custom-footer.html
