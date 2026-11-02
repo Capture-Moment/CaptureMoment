@@ -34,12 +34,14 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/api/html
 
   deploy:
     needs: build-docs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
