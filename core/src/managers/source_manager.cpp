@@ -398,7 +398,18 @@ SourceManager::getTile(Common::ImageDim x, Common::ImageDim y,
         return std::unexpected(ErrorHandling::CoreError::InvalidImageRegion);
     }
 
-    // OIIO handles bounds via ROI - no manual clamping needed
+    // Bounds contract: reject requests sharing NO pixel with the image.
+    // ImageDim is UNSIGNED and zero sizes are already rejected above, so a
+    // request can only miss the image on the right/bottom side: these two
+    // comparisons fully express "no intersection".
+    const auto img_width  { static_cast<Common::ImageDim>(m_image_buf->spec().width) };
+    const auto img_height { static_cast<Common::ImageDim>(m_image_buf->spec().height) };
+
+    if (x >= img_width || y >= img_height) {
+        return std::unexpected(ErrorHandling::CoreError::InvalidImageRegion);
+    }
+
+    // OIIO handles partial intersections via ROI - no manual clamping needed
     OIIO::ROI roi(
         static_cast<int>(x), static_cast<int>(x + width),
         static_cast<int>(y), static_cast<int>(y + height),
@@ -406,8 +417,9 @@ SourceManager::getTile(Common::ImageDim x, Common::ImageDim y,
         0, 4
         );
 
-    // Allocate result
-    const size_t data_size { static_cast<size_t>(width) * static_cast<size_t>(height) * 4 };
+    // Allocate result (zero-initialized: the outside-intersection area
+    // of clamped requests is filled by this, not by OIIO)
+    const size_t data_size { width * height * 4 };
     std::vector<float> data(data_size);
 
     if (!m_image_buf->get_pixels(roi, OIIO::TypeDesc::FLOAT, data.data())) {
@@ -448,13 +460,32 @@ SourceManager::setTile(const Common::ImageRegion& tile)
         return std::unexpected(ErrorHandling::CoreError::InvalidImageRegion);
     }
 
-    // OIIO ROI for the tile
-    OIIO::ROI roi(
-        static_cast<int>(tile.m_x), static_cast<int>(tile.m_x + tile.m_width),
-        static_cast<int>(tile.m_y), static_cast<int>(tile.m_y + tile.m_height),
-        0, 1,
-        0, 4
-        );
+    // Bounds contract: reject regions sharing NO pixel with the image.
+    // ImageRegion mixes SIGNED coordinates (ImageCoord = int32, negative
+    // offsets allowed) with UNSIGNED dimensions (ImageDim = size_t): raw
+    // arithmetic like `m_x + m_width` silently converts the negative side
+    // to size_t (e.g. -3 becomes ~1.8e19) and the check never fires.
+    // Everything is normalized to int, where the math keeps its ordinary
+    // meaning; the same locals feed the OIIO ROI (int fields).
+    const int img_width  { m_image_buf->spec().width };
+    const int img_height { m_image_buf->spec().height };
+    const int tile_x { tile.m_x };
+    const int tile_y { tile.m_y };
+    const int tile_w { static_cast<int>(tile.m_width) };
+    const int tile_h { static_cast<int>(tile.m_height) };
+
+    const bool is_no_intersection {
+        tile_x >= img_width
+        || tile_y >= img_height
+        || tile_x + tile_w <= 0
+        || tile_y + tile_h <= 0
+    };
+    if (is_no_intersection) {
+        return std::unexpected(ErrorHandling::CoreError::InvalidImageRegion);
+    }
+
+    // OIIO handles partial intersections via ROI - no manual clamping needed
+    const OIIO::ROI roi(tile_x, tile_x + tile_w, tile_y, tile_y + tile_h, 0, 1, 0, 4);
 
     if (!m_image_buf->set_pixels(roi, OIIO::TypeDesc::FLOAT, tile.m_data.data())) {
         spdlog::error("[SourceManager::setTile] set_pixels failed: {}", m_image_buf->geterror());
