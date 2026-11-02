@@ -12,7 +12,7 @@ PROJECT_NAME           = "CaptureMoment"
 PROJECT_NUMBER         = 0.1.0
 PROJECT_BRIEF          = "Free and open-source non-destructive photo editor"
 PROJECT_LOGO           = assets/icons/favicon.png
-OUTPUT_DIRECTORY       = docs
+OUTPUT_DIRECTORY       = docs/api
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = YES
 
