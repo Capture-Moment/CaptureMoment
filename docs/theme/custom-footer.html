@@ -10,6 +10,13 @@
     <script type="text/javascript">
       DoxygenAwesomeDarkModeToggle.init();
       DoxygenAwesomeFragmentCopyButton.init();
+
+      // Favicon (injected into <head> at runtime)
+      var fav = document.createElement('link');
+      fav.rel = 'icon';
+      fav.type = 'image/png';
+      fav.href = '$relpath^assets/icons/favicon.png';
+      document.head.appendChild(fav);
     </script>
   </body>
 </html>
