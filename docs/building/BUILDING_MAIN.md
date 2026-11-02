@@ -36,9 +36,10 @@ Before selecting your platform, ensure you have these tools:
 | OpenImageIO | 3.1.14.0             | https://github.com/AcademySoftwareFoundation/OpenImageIO |
 | Halide      | 21.0           | https://github.com/halide/Halide                         |
 | spdlog      | 1.16.0      | https://github.com/gabime/spdlog                         |
-| Exiv2         | 0.28.7| https://github.com/Exiv2/exiv2  
-| Magic Enum         |0.9.7| https://github.com/Neargye/magic_enum/
-|  Qt6           | 6.10.x| https://doc.qt.io/qt-6/
+| Exiv2         | 0.28.7| https://github.com/Exiv2/exiv2  |
+| Magic Enum         |0.9.7| https://github.com/Neargye/magic_enum/ |
+|  Qt6           | 6.10.x| https://doc.qt.io/qt-6/ |
+|  GoogleTest           | 1.18.0 | https://github.com/google/googletest/ |
 
 ---
 ## 📦 How to build

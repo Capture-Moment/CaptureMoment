@@ -44,15 +44,17 @@ Capture Moment is built for performance and modularity, using best-in-class libr
 
 |     Component    |      Technology     |                              Role                             |
 |:----------------:|:-------------------:|:-------------------------------------------------------------:|
-| Language         | C++20 / C++23       | Core Logic, Speed, and Control.                               |
-| Build System     | CMake 4.2+         | Cross-platform build configuration.                           |
-| I/O & Cache      | OpenImageIO         | Read/Write all image formats, Tile-based caching.             |
-| Processing       | Halide              | High-performance image processing pipeline optimization.      |
-| UI               | Qt6 Quick/QML      | Modern, declarative, and hardware-accelerated user interface. |
+| Language         | C++20 / C++23       | Core Logic, Speed, and Control                               |
+| Build System     | CMake 4.2+         | Cross-platform build configuration                           |
+| I/O & Cache      | OpenImageIO         | Read/Write all image formats, Tile-based caching             |
+| Processing       | Halide              | High-performance image processing pipeline optimization      |
+| UI               | Qt6 Quick/QML      | Modern, declarative, and hardware-accelerated user interface |
 | Color Management | OpenColorIO (already included in OpenImageIO)       | Industry-standard color space handling (Planned).             |
-| Cataloging       | SQLite              | Fast, embeddable database for photo indexing.                 |
+| Cataloging       | SQLite              | Fast, embeddable database for photo indexing                 |
 | Serialization    | Exiv2 (XMP) | Storing non-destructive Image    |
-| setting    | JSON | Edits application settings.       |
+| Setting    | JSON | Edits application settings       |
+| Tests    | GoogleTest | Test the project       |
+
 ---
 
 ## 📋 Documentation & Specs
