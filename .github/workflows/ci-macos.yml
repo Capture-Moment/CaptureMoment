@@ -1,221 +1,251 @@
-  name: CI macOS (Homebrew + Clang)
+# .github/workflows/ci-macos.yml
+# Do not modify the name directly.
+name: CI macOS (Homebrew + Clang)
 
-  on:
-    push:
-      branches: ["main"]
-    pull_request:
-      branches: ["main", "develop"]
-    workflow_dispatch:
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main", "develop"]
+  workflow_dispatch:
 
-  env:
-   CMAKE_GENERATOR: Ninja
-   EXIV2_VERSION: "v0.28.7"
-   OIIO_VERSION: "v3.1.14.0"
-   INSTALL_PREFIX: "/Users/runner/local"
+env:
+  CMAKE_GENERATOR: Ninja
+  EXIV2_VERSION: "v0.28.7"
+  OIIO_VERSION: "v3.1.14.0"
+  INSTALL_PREFIX: "/Users/runner/local"
 
-  jobs:
-    build:
-      runs-on: macos-latest
-      timeout-minutes: 30
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 30
 
-      strategy:
-        matrix:
-          build-type: [Release, Debug]
-          include:
-            - build-type: Release
-              preset: release-homebrew
-            - build-type: Debug
-              preset: debug-homebrew
+    strategy:
+      matrix:
+        build-type: [Release, Debug]
+        include:
+          - build-type: Release
+            preset: release-homebrew
+          - build-type: Debug
+            preset: debug-homebrew
 
-      steps:
-        # ====================================================================
-        # Checkout
-        # ====================================================================
-        - name: Checkout repository
-          uses: actions/checkout@v7
-          with:
-            submodules: recursive
-            fetch-depth: 0
-
-        # ====================================================================
-        # Install dependencies via Homebrew
-        # ====================================================================
-        - name: Install Homebrew dependencies
-          run: |
-            brew update
-            brew install ccache
-
-            # spdlog dependencies
-            brew install spdlog
-
-            # Exiv2 dependencies
-            brew install inih
-
-            # OpenImageIO dependencies
-            brew install libpng jpeg libtiff openexr
-
-            # OpenColorIO dependencies
-            brew install pystring
-
-            brew list --versions spdlog ccache
+    steps:
+      # ====================================================================
+      # Checkout
+      # ====================================================================
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
       # ====================================================================
-      # Setup Python and install Halide via pip
+      # Install dependencies via Homebrew
       # ====================================================================
-        - name: Setup Python
-          uses: actions/setup-python@v6
-          with:
-           python-version: '3.12'
+      - name: Install Homebrew dependencies
+        run: |
+          brew update
+          brew install ccache
 
-        - name: pip halide
-          run: |
-             python -m pip install --only-binary :all: halide==21.0.0
-             echo "HALIDE_CMAKE_DIR=$(python -c 'import halide, os; print(os.path.dirname(halide.__file__))')" >> "$GITHUB_ENV"
+          # spdlog dependencies
+          brew install spdlog
 
-        # ====================================================================
-        # Setup ccache
-        # ====================================================================
-        - name: Setup ccache
-          uses: hendrikmuhs/ccache-action@v1.2
-          with:
-            key: macos-ccache-${{ matrix.build-type }}
-            max-size: "200M"
+          # Exiv2 dependencies
+          brew install inih
 
-        # ====================================================================
-        # Cache for Exiv2
-        # ====================================================================
-        - name: Cache Exiv2
-          id: cache-exiv2
-          uses: actions/cache@v6
-          with:
-            path: ${{ env.INSTALL_PREFIX }}/exiv2
-            key: exiv2-${{ env.EXIV2_VERSION }}-macos
+          # OpenImageIO dependencies
+          brew install libpng jpeg libtiff openexr
 
-        # ====================================================================
-        # Build Exiv2 from source
-        # ====================================================================
-        - name: Build Exiv2 from source
-          if: steps.cache-exiv2.outputs.cache-hit != 'true'
-          run: |
-            echo "::group::Building Exiv2 ${{ env.EXIV2_VERSION }}"
+          # OpenColorIO dependencies
+          brew install pystring
 
-            git clone --depth 1 --branch ${{ env.EXIV2_VERSION }} \
-              https://github.com/Exiv2/exiv2.git /tmp/exiv2-src
-            cd /tmp/exiv2-src
+          brew list --versions spdlog ccache
 
-            cmake -S . -B build -G Ninja \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PREFIX }}/exiv2 \
-              -DBUILD_SHARED_LIBS=ON \
-              -DEXIV2_BUILD_SAMPLES=OFF \
-              -DEXIV2_BUILD_TESTS=OFF
+    # ====================================================================
+    # Setup Python and install Halide via pip
+    # ====================================================================
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
 
-            cmake --build build --parallel $(sysctl -n hw.ncpu)
-            cmake --install build
-
-            rm -rf /tmp/exiv2-src
-            echo "::endgroup::"
-
-        # ====================================================================
-        # Cache for OpenImageIO
-        # ====================================================================
-        - name: Cache OpenImageIO
-          id: cache-oiio
-          uses: actions/cache@v6
-          with:
-            path: ${{ env.INSTALL_PREFIX }}/oiio
-            key: oiio-${{ env.OIIO_VERSION }}-macos
-
-        # ====================================================================
-        # Build OpenImageIO from source
-        # ====================================================================
-        - name: Build OpenImageIO from source
-          if: steps.cache-oiio.outputs.cache-hit != 'true'
-          run: |
-            echo "::group::Building OpenImageIO ${{ env.OIIO_VERSION }}"
-
-            git clone --depth 1 --branch ${{ env.OIIO_VERSION }} \
-              https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/oiio-src
-            cd /tmp/oiio-src
-
-            cmake -S . -B build -G Ninja \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PREFIX }}/oiio \
-              -DEXIV2_ROOT=${{ env.INSTALL_PREFIX }}/exiv2 \
-              -DOpenImageIO_BUILD_MISSING_DEPS=required \
-              -DSTOP_ON_WARNING=0 \
-              -DOIIO_BUILD_TOOLS=OFF \
-              -DOIIO_BUILD_TESTS=OFF \
-              -DUSE_PYTHON=OFF
-
-            cmake --build build --parallel $(sysctl -n hw.ncpu)
-            cmake --install build
-
-            rm -rf /tmp/oiio-src
-            echo "::endgroup::"
+      - name: pip halide
+        run: |
+            python -m pip install --only-binary :all: halide==21.0.0
+            echo "HALIDE_CMAKE_DIR=$(python -c 'import halide, os; print(os.path.dirname(halide.__file__))')" >> "$GITHUB_ENV"
 
       # ====================================================================
-      # Setup Qt
+      # Setup ccache
       # ====================================================================
-        - name: Setup Qt 6.10.2 Environment
-          uses: jurplel/install-qt-action@v4 
-          with:
-           version: '6.10.2'
-           target: 'desktop'
-           host: 'mac'
-           modules: 'qtshadertools'
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: macos-ccache-${{ matrix.build-type }}
+          max-size: "200M"
 
-        # ====================================================================
-        # Configure cmake environment
-        # ====================================================================
-        - name: Configure CMake
-          run: |
-           TESTS_FLAG="-Dtests=OFF"
+      # ====================================================================
+      # Cache for Exiv2
+      # ====================================================================
+      - name: Cache Exiv2
+        id: cache-exiv2
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.INSTALL_PREFIX }}/exiv2
+          key: exiv2-${{ env.EXIV2_VERSION }}-macos
 
-           if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
-             TESTS_FLAG="-Dtests=ON"
-             echo "::notice file=tests::the directory 'tests' exists and is not empty. Tests enabled."
-           else
-             echo "::warning file=tests::the directory 'tests' is empty or missing. Tests disabled (Tests:OFF)."
-           fi
+      # ====================================================================
+      # Build Exiv2 from source
+      # ====================================================================
+      - name: Build Exiv2 from source
+        if: steps.cache-exiv2.outputs.cache-hit != 'true'
+        run: |
+          echo "::group::Building Exiv2 ${{ env.EXIV2_VERSION }}"
 
-           cmake \
-           --preset ${{ matrix.preset }} \
-           -Ddesktop_ui=ON \
-           ${TESTS_FLAG} \
-           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-           -DHALIDE_DIR="${HALIDE_CMAKE_DIR}" \
-           -DEXIV2_ROOT=${{ env.INSTALL_PREFIX }}/exiv2 \
-           -DOpenImageIO_ROOT=${{ env.INSTALL_PREFIX }}/oiio
-          shell: bash
+          git clone --depth 1 --branch ${{ env.EXIV2_VERSION }} \
+            https://github.com/Exiv2/exiv2.git /tmp/exiv2-src
+          cd /tmp/exiv2-src
 
-        # ====================================================================
-        # Build
-        # ====================================================================
-        - name: Build Project
-          run: |
-           cmake --build build/${{ matrix.preset }} --config ${{ matrix.build-type }} --parallel $(sysctl -n hw.ncpu)
-          shell: bash
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PREFIX }}/exiv2 \
+            -DBUILD_SHARED_LIBS=ON \
+            -DEXIV2_BUILD_SAMPLES=OFF \
+            -DEXIV2_BUILD_TESTS=OFF
 
-        # ====================================================================
-        # Test
-        # ====================================================================
-        - name: Run Tests
-          run: |
-           cd build/${{ matrix.preset }}
-           ctest --output-on-failure -C ${{ matrix.build-type }}
-          shell: bash
+          cmake --build build --parallel $(sysctl -n hw.ncpu)
+          cmake --install build
 
-        # ====================================================================
-        # Upload build artifacts
-        # ====================================================================
-        - name: Upload build artifacts
-          if: always()
-          uses: actions/upload-artifact@v7
-          with:
-           name: build-macos-${{ matrix.build-type }}
-           path: |
-             build/${{ matrix.preset }}/qt/desktop/*.dmg
-             build/${{ matrix.preset }}/qt/desktop/*.app
-           retention-days: 7
-           if-no-files-found: warn
+          rm -rf /tmp/exiv2-src
+          echo "::endgroup::"
+
+      # ====================================================================
+      # Cache for OpenImageIO
+      # ====================================================================
+      - name: Cache OpenImageIO
+        id: cache-oiio
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.INSTALL_PREFIX }}/oiio
+          key: oiio-${{ env.OIIO_VERSION }}-macos
+
+      # ====================================================================
+      # Build OpenImageIO from source
+      # ====================================================================
+      - name: Build OpenImageIO from source
+        if: steps.cache-oiio.outputs.cache-hit != 'true'
+        run: |
+          echo "::group::Building OpenImageIO ${{ env.OIIO_VERSION }}"
+
+          git clone --depth 1 --branch ${{ env.OIIO_VERSION }} \
+            https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/oiio-src
+          cd /tmp/oiio-src
+
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PREFIX }}/oiio \
+            -DEXIV2_ROOT=${{ env.INSTALL_PREFIX }}/exiv2 \
+            -DOpenImageIO_BUILD_MISSING_DEPS=required \
+            -DSTOP_ON_WARNING=0 \
+            -DOIIO_BUILD_TOOLS=OFF \
+            -DOIIO_BUILD_TESTS=OFF \
+            -DUSE_PYTHON=OFF
+
+          cmake --build build --parallel $(sysctl -n hw.ncpu)
+          cmake --install build
+
+          rm -rf /tmp/oiio-src
+          echo "::endgroup::"
+
+    # ====================================================================
+    # Setup Qt
+    # ====================================================================
+      - name: Setup Qt 6.10.2 Environment
+        uses: jurplel/install-qt-action@v4 
+        with:
+          version: '6.10.2'
+          target: 'desktop'
+          host: 'mac'
+          modules: 'qtshadertools'
+
+      # ====================================================================
+      # Configure cmake environment
+      # ====================================================================
+      - name: Configure CMake
+        run: |
+          TESTS_FLAG=""
+
+          if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
+            TESTS_FLAG="-Dtests=ON"
+            echo "::notice file=tests::the directory 'tests' exists and is not empty. Tests enabled."
+          else
+            echo "::warning file=tests::the directory 'tests' is empty or missing. Tests disabled (Tests:OFF)."
+          fi
+
+          cmake \
+          --preset ${{ matrix.preset }} \
+          -Ddesktop_ui=ON \
+          -Dsanitizers=ON \
+          ${TESTS_FLAG} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DHALIDE_DIR="${HALIDE_CMAKE_DIR}" \
+          -DEXIV2_ROOT=${{ env.INSTALL_PREFIX }}/exiv2 \
+          -DOpenImageIO_ROOT=${{ env.INSTALL_PREFIX }}/oiio
+        shell: bash
+
+      # ====================================================================
+      # Build
+      # ====================================================================
+      - name: Build Project
+        run: |
+          cmake --build build/${{ matrix.preset }} --config ${{ matrix.build-type }} --parallel $(sysctl -n hw.ncpu)
+        shell: bash
+
+      # ====================================================================
+      # Test
+      # ====================================================================
+      - name: Run Tests
+        run: |
+          cd build/${{ matrix.preset }}
+          ctest --output-on-failure -C ${{ matrix.build-type }} --no-tests=ignore --output-junit "${{ github.workspace }}/test-results-${{ matrix.preset }}.xml"
+        shell: bash
+
+      # ====================================================================
+      # Upload test results (JUnit)
+      # ====================================================================
+      - name: Upload test results
+        if: (!cancelled())
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.preset }}
+          path: test-results-${{ matrix.preset }}.xml
+          if-no-files-found: warn
+          retention-days: 1
+
+      # ====================================================================
+      # Upload build artifacts
+      # ====================================================================
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-macos-${{ matrix.build-type }}
+          path: |
+            build/${{ matrix.preset }}/qt/desktop/*.dmg
+            build/${{ matrix.preset }}/qt/desktop/*.app
+          retention-days: 7
+          if-no-files-found: warn
+
+
+#=====================================================================
+# Publish Test Results
+#=====================================================================
+  publish-tests:
+    needs: build
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    uses: ./.github/workflows/publish-tests.yml
+    with:
+      name: macOS

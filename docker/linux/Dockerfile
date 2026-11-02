@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     patchelf desktop-file-utils \
     libxcb-cursor0 \
     libspdlog-dev libcurl4-openssl-dev libxkbcommon-dev libgl1-mesa-dev \
-    libbrotli-dev libexpat1-dev libgtest-dev libinih-dev libssh-dev \
+    libbrotli-dev libexpat1-dev libinih-dev libssh-dev \
     libxml2-utils libz-dev zlib1g-dev libjpeg-dev libfreetype-dev \
     libpng-dev libuhd-dev libraw-dev libopencv-core-dev libopencv-imgproc-dev \
     libjxl-dev libheif-dev libpystring-dev libtiff-dev libimath-dev \
@@ -77,3 +77,9 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
     cmake --install build && \
     rm -rf /tmp/*
 WORKDIR /app
+
+
+# TMP
+RUN test "$(gcc -print-file-name=libasan.so)" != "libasan.so" && \
+    test "$(gcc -print-file-name=libubsan.so)" != "libubsan.so" && \
+    echo "libasan et libubsan OK"

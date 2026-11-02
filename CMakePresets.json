@@ -344,11 +344,13 @@
         {
             "name": "debug",
             "configurePreset": "debug",
+            "configuration": "Debug",
             "displayName": "Build Debug"
         },
         {
             "name": "release",
             "configurePreset": "release",
+            "configuration": "Release",
             "displayName": "Build Release"
         },
         {
@@ -389,31 +391,37 @@
         {
             "name": "debug-vs",
             "configurePreset": "debug-vs",
+            "configuration": "Debug",
             "displayName": "Build Debug (VS)"
         },
         {
             "name": "release-vs",
             "configurePreset": "release-vs",
+            "configuration": "Release",
             "displayName": "Build Release (VS)"
         },
         {
             "name": "debug-vcpkg-msvc",
             "configurePreset": "debug-vcpkg-msvc",
+            "configuration": "Debug",
             "displayName": "Build Debug MSVC (vcpkg)"
         },
         {
             "name": "debug-vcpkg-msvc-desktop",
             "configurePreset": "debug-vcpkg-msvc-desktop",
+            "configuration": "Debug",
             "displayName": "Build Debug MSVC (vcpkg Desktop UI)"
         },
         {
             "name": "release-vcpkg-msvc",
             "configurePreset": "release-vcpkg-msvc",
+            "configuration": "Release",
             "displayName": "Build Release MSVC (vcpkg)"
         },
         {
             "name": "release-vcpkg-msvc-desktop",
             "configurePreset": "release-vcpkg-msvc-desktop",
+            "configuration": "Release",
             "displayName": "Build Release MSVC (vcpkg Desktop UI)"
         },
         {
@@ -461,9 +469,19 @@
         {
             "name": "default",
             "configurePreset": "debug",
-            "output": {
-                "outputOnFailure": true
-            }
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "debug-vcpkg-msvc",
+            "configurePreset": "debug-vcpkg-msvc",
+            "configuration": "Debug",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "release-vcpkg-msvc",
+            "configurePreset": "release-vcpkg-msvc",
+            "configuration": "Release",
+            "output": { "outputOnFailure": true }
         }
     ]
 }
