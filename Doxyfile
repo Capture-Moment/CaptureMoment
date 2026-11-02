@@ -226,7 +226,8 @@ DIA_PATH               =
 # ------------------------------------------------------------------
 HTML_EXTRA_STYLESHEET  = docs/theme/doxygen-awesome/doxygen-awesome.css \
                          docs/theme/doxygen-awesome/doxygen-awesome-sidebar-only.css \
-                         docs/theme/doxygen-awesome/doxygen-awesome-sidebar-only-darkmode-toggle.css
+                         docs/theme/doxygen-awesome/doxygen-awesome-sidebar-only-darkmode-toggle.css \
+                         docs/theme/custom.css
 HTML_EXTRA_FILES       = docs/theme/doxygen-awesome/doxygen-awesome-darkmode-toggle.js \
                          docs/theme/doxygen-awesome/doxygen-awesome-fragment-copy-button.js
 HTML_FOOTER            = docs/theme/custom-footer.html

@@ -1,0 +1,6 @@
+/* Logo sizing in the header */
+#projectlogo img {
+  max-height: 40px;
+  max-width: 140px;
+  object-fit: contain;
+}
