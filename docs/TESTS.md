@@ -1,5 +1,7 @@
 # How to run Tests
-This guide for running the tests
+This guide for running the tests.
+
+We use Sanitizers and GoogleTest
 
 ## Example on Windows MSVC
 ```PowerShell
