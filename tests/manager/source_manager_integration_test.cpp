@@ -107,40 +107,6 @@ std::vector<float> buildPatternData(int width, int height, int channels)
 }
 
 /**
- * @brief Writes a real float TIFF fixture through the linked OIIO.
- * @return The created file path, or nullopt if OIIO refused to write it.
- */
-std::optional<std::filesystem::path>
-writePatternTiff(const std::filesystem::path& dir, const std::string& stem,
-                 int width, int height, int channels)
-{
-    const std::filesystem::path filePath { dir / (stem + ".tiff") };
-
-    auto out { OIIO::ImageOutput::create(filePath.string()) };
-    if (!out) {
-        return std::nullopt;
-    }
-
-    OIIO::ImageSpec spec(width, height, channels, OIIO::TypeDesc::FLOAT);
-    // Canonical OIIO name for Rec709-linear; float data is linear by
-    // convention, so the manager's color pipeline must stay a no-op here.
-    spec.attribute("oiio:ColorSpace", "linear");
-    spec.attribute("ImageDescription", "CaptureMoment integration fixture");
-    spec.attribute("sm:TestPattern", "v1");
-
-    if (!out->open(filePath.string(), spec)) {
-        return std::nullopt;
-    }
-
-    const auto data { buildPatternData(width, height, channels) };
-    if (!out->write_image(OIIO::TypeDesc::FLOAT, data.data()) || !out->close()) {
-        return std::nullopt;
-    }
-
-    return filePath;
-}
-
-/**
  * @brief Writes a non-image file behind a .tiff extension (corrupt input).
  */
 std::filesystem::path
@@ -157,15 +123,21 @@ writeCorruptFile(const std::filesystem::path& dir, const std::string& stem)
 }
 
 /**
- * @brief Writes a real float EXR fixture through the linked OIIO.
- *        EXR stores arbitrary header attributes natively: the metadata
- *        tests must not depend on the TIFF plugin's tag table.
+ * @brief Writes a real float image fixture through the linked OIIO.
+ *
+ * The format is selected by OIIO from the extension. EXR stores arbitrary
+ * header attributes natively; TIFF has a fixed tag table - the metadata
+ * tests deliberately use EXR for that reason.
+ *
+ * @param extension Target format extension with dot, e.g. ".tiff" or ".exr".
+ * @return The created file path, or nullopt if OIIO refused to write it.
  */
 std::optional<std::filesystem::path>
-writePatternExr(const std::filesystem::path& dir, const std::string& stem,
-                int width, int height, int channels)
+writePatternImage(const std::filesystem::path& dir, const std::string& stem,
+                  const std::string& extension,
+                  int width, int height, int channels)
 {
-    const std::filesystem::path filePath { dir / (stem + ".exr") };
+    const std::filesystem::path filePath { dir / (stem + extension) };
 
     auto out { OIIO::ImageOutput::create(filePath.string()) };
     if (!out) {
@@ -173,6 +145,8 @@ writePatternExr(const std::filesystem::path& dir, const std::string& stem,
     }
 
     OIIO::ImageSpec spec(width, height, channels, OIIO::TypeDesc::FLOAT);
+    // Canonical OIIO name for Rec709-linear; float data is linear by
+    // convention, so the manager's color pipeline must stay a no-op here.
     spec.attribute("oiio:ColorSpace", "linear");
     spec.attribute("ImageDescription", "CaptureMoment integration fixture");
     spec.attribute("sm:TestPattern", "v1");
@@ -252,7 +226,7 @@ class SourceManagerIntegrationTest: public ::testing::Test
         [[nodiscard]] std::optional<std::filesystem::path>
         makeTiff(const std::string& stem, int width, int height, int channels = 4)
         {
-            return writePatternTiff(m_dir.path(), stem, width, height, channels);
+            return writePatternImage(m_dir.path(), stem, ".tiff", width, height, channels);
         }
 
         /**
@@ -263,7 +237,7 @@ class SourceManagerIntegrationTest: public ::testing::Test
         [[nodiscard]] std::optional<std::filesystem::path>
         makeExr(const std::string& stem, int width, int height, int channels = 4)
         {
-            return writePatternExr(m_dir.path(), stem, width, height, channels);
+            return writePatternImage(m_dir.path(), stem, ".exr", width, height, channels);
         }
 };
 
