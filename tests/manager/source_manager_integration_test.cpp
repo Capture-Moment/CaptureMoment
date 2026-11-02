@@ -47,6 +47,9 @@
 #include <string_view>
 #include <system_error>
 #include <vector>
+#include <atomic>
+#include <random>
+#include <sstream>
 
 namespace CaptureMoment::Core::Managers::Test {
 
@@ -162,12 +165,15 @@ writePatternImage(const std::filesystem::path& dir, const std::string& stem,
 
     return filePath;
 }
-
 /**
  * @brief RAII directory unique per test, wiped on destruction.
  *
- * @details Named after the suite and the test: a crashed run never pollutes
- *          the next one, and destructors never throw (error_code overloads).
+ * @details Uniqueness comes from a per-process random token plus a
+ *          monotonic counter: two concurrent runs can never collide, and
+ *          the path is not predictable (publicly-writable-directory
+ *          hardening, cpp:S2083). On POSIX the directory is additionally
+ *          restricted to its owner (0700); on Windows %TEMP% is already
+ *          per-user.
  */
 class TempTestDir {
 public:
@@ -176,13 +182,21 @@ public:
         namespace fs = std::filesystem;
 
         const auto* info { ::testing::UnitTest::GetInstance()->current_test_info() };
-        m_path = fs::temp_directory_path()
-               / ("capturemoment_" + std::string(info->test_suite_name())
-                  + "_" + std::string(info->name()));
+
+        std::ostringstream name;
+        name << "capturemoment_" << info->test_suite_name() << '_' << info->name()
+             << '_' << runToken() << '_' << ++m_counter;
+
+        m_path = fs::temp_directory_path() / name.str();
 
         std::error_code ec;
-        fs::remove_all(m_path, ec); // leftover from a previously crashed run
+        fs::remove_all(m_path, ec); // paranoid: a unique name should never exist
         fs::create_directories(m_path, ec);
+#ifndef _WIN32
+        // /tmp is world-writable (sticky bit): restrict the dir to its owner,
+        // so no other local user can read or swap it.
+        fs::permissions(m_path, fs::perms::owner_all, ec);
+#endif
     }
 
     ~TempTestDir()
@@ -199,6 +213,25 @@ public:
     [[nodiscard]] const std::filesystem::path& path() const noexcept { return m_path; }
 
 private:
+    /**
+     * @brief Stable random token identifying THIS process run.
+     * @note Thread-safe static initialization, computed once.
+     */
+    [[nodiscard]] static const std::string& runToken()
+    {
+        static const std::string token {
+            [] {
+                std::random_device device;
+                std::ostringstream oss;
+                oss << std::hex << device() << device();
+                return oss.str();
+            }()
+        };
+        return token;
+    }
+
+    inline static std::atomic<std::uint64_t> m_counter { 0 };
+
     std::filesystem::path m_path;
 };
 
