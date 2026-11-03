@@ -61,7 +61,7 @@ Capture Moment is built for performance and modularity, using best-in-class libr
 
 For a detailed view of the architecture, technical choices, roadmap, and planned features:  
 
-[➡️ Read the General Architecture Document](./docs/architecture/GENERAL_ARCHITECTURE.md).
+[➡️ Read the documentation](https://capture-moment.github.io/docs/).
 
 ---
 
@@ -69,7 +69,7 @@ For a detailed view of the architecture, technical choices, roadmap, and planned
 
 For detailed build instructions for each platform (Windows, macOS, Linux) and using various package managers (Vcpkg, Homebrew, apt/dnf):
 
-[➡️ Read the full Build Guide](./docs/building/BUILDING_MAIN.md).
+[➡️ Read the full Build Guide](https://capture-moment.github.io/docs/building/BUILDING_MAIN/).
 
 ---
 
@@ -77,7 +77,7 @@ For detailed build instructions for each platform (Windows, macOS, Linux) and us
 
 Contributions are welcome! Whether you are a C++ developer, a designer, a tester, or a technical writer, your help is appreciated:
 
-[➡️ Please read the Contribution Guide ](./docs/CONTRIBUTING.md) for details on setting up your environment and submitting changes.
+[➡️ Please read the Contribution Guide ](https://capture-moment.github.io/docs/guidelines/CONTRIBUTING/) for details on setting up your environment and submitting changes.
 
 ---
 
