@@ -102,7 +102,7 @@ jobs:
 
       - name: pip halide
         run: |
-         pip install --only-binary :all: halide==21.0.0
+         pip install --only-binary :all: halide==22.1.0
          $halideRoot = python -c "import halide; print(halide.install_dir())"
          echo "HALIDE_ROOT=$halideRoot" >> $env:GITHUB_ENV
     
