@@ -27,7 +27,7 @@ BASHRC="$HOME/.bashrc"
 MISSING=""
 command -v cmake >/dev/null 2>&1 || MISSING="${MISSING} cmake(4.2+)"
 command -v ninja >/dev/null 2>&1 || MISSING="${MISSING} ninja-build"
-command -v python3 >/dev/null 2>&1 || MISSING="${MISSING} python3"
+command -v python3 >/dev/null 2>&1 || MISSING="${MISSING} python"
 command -v git >/dev/null 2>&1 || MISSING="${MISSING} git"
 
 GCC_MIN=16
