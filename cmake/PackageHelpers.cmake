@@ -46,7 +46,6 @@ function(find_required_packages)
     # Qt6 will be searched by the sub-projects ui/desktop, ui/mobile
 
     summarize_found_packages()
-    warn_halide_requirements()
 
 endfunction()
 
@@ -105,35 +104,26 @@ endfunction()
 function(find_halide_package)
 
     message(STATUS "Searching for Halide...")
-    
-    if(HALIDE_DIR)
-    # Path to cmake Halide. -DHALIDE_DIR=/path/to/halide
-    find_package(Halide CONFIG REQUIRED HINTS ${HALIDE_DIR})
-    message(STATUS "Halide Found in this dir : ${HALIDE_DIR}")
-    else()
-    find_package(Halide CONFIG QUIET)
-    endif()
-    
-    if(Halide_FOUND)        
-        set(Halide_FOUND TRUE PARENT_SCOPE)
-        set(Halide_VERSION ${Halide_VERSION} PARENT_SCOPE)
-    else()
-        message(FATAL_ERROR "Halide not found. Please install it via your package manager or vcpkg/conan.")
-    endif()
-endfunction()
 
-# ============================================================
-# Warning about Halide requirements
-# ============================================================
-function(warn_halide_requirements)
-    message(STATUS "╔════════════════════════════════════════════════════════════╗")
-    message(STATUS "║    Warning: Halide requires LLVM                           ║")
-    message(STATUS "╠════════════════════════════════════════════════════════════╣")
-    message(STATUS "║  If building from source (for GPU Support)                 ║")
-    message(STATUS "║  - Space needed: 30-100 GB (debug or release)              ║")
-    message(STATUS "║  - Build time: 30-240 minutes (depending on hardware)      ║")
-    message(STATUS "╚════════════════════════════════════════════════════════════╝")
-    message(STATUS "")
+    # Help CMake find pip wheels installed in the active venv
+    if(DEFINED ENV{VIRTUAL_ENV})
+        list(APPEND CMAKE_PREFIX_PATH "$ENV{VIRTUAL_ENV}")
+    endif()
+
+    find_package(Halide 22.1 CONFIG QUIET)
+
+    if(NOT Halide_FOUND)
+        message(FATAL_ERROR
+            "Halide 22.1+ not found.\n"
+            "See the installation guide:\n"
+            "https://capture-moment.github.io/docs/")
+    endif()
+
+    message(STATUS "Halide found: version ${Halide_VERSION}")
+
+    set(Halide_FOUND TRUE PARENT_SCOPE)
+    set(Halide_VERSION ${Halide_VERSION} PARENT_SCOPE)
+
 endfunction()
 
 # ============================================================
@@ -252,7 +242,7 @@ function(summarize_found_packages)
     message(STATUS "╠════════════════════════════════════════════════════════════╣")
     message(STATUS "║ spdlog : 1.16.0")
     message(STATUS "║ OpenImageIO : 3.1.14.0")
-    message(STATUS "║ Halide : 21.0.0")
+    message(STATUS "║ Halide : 22.1.0")
     message(STATUS "║ Exiv2 : 0.28.7")
     message(STATUS "║ magic_enum : 0.9.7")
     message(STATUS "║ GTest : 1.18.0")

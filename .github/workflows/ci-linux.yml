@@ -67,9 +67,9 @@ jobs:
         build-type: [Release, Debug]
         include:
           - build-type: Release
-            preset: release-ninja-linux
+            preset: release-ninja
           - build-type: Debug
-            preset: debug-ninja-linux
+            preset: debug-ninja
 
     steps:
       # ====================================================================
