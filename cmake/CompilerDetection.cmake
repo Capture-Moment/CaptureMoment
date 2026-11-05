@@ -6,7 +6,7 @@
 # Format: COMPILER_ID|MIN_VERSION|NAME
 set(SUPPORTED_COMPILERS
     "MSVC|19.44|MSVC (Visual Studio 2026 18.0+)"
-    "GNU|13.0|GCC"
+    "GNU|16.0|GCC"
     "Clang|16.0|Clang"
     "AppleClang|15.0|Apple Clang (Xcode 15+)"
     "Intel|2023.0|Intel oneAPI"
@@ -15,32 +15,29 @@ set(SUPPORTED_COMPILERS
 )
 
 function(verify_cpp23_support)
-    set(COMPILER_FOUND FALSE)
-    
     foreach(ENTRY ${SUPPORTED_COMPILERS})
-        # Split the entry using the pipe '|' delimiter into a CMake list.
         string(REPLACE "|" ";" ENTRY_LIST "${ENTRY}")
-        
+
         list(GET ENTRY_LIST 0 COMPILER_ID)
         list(GET ENTRY_LIST 1 MIN_VERSION)
         list(GET ENTRY_LIST 2 NAME)
-        
-        if(CMAKE_CXX_COMPILER_ID STREQUAL "${COMPILER_ID}") # STREQUAL is safer than MATCHES for exact ID check
-            set(COMPILER_FOUND TRUE)
-            
+
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "${COMPILER_ID}")
+
             if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS MIN_VERSION)
-                message(FATAL_ERROR 
-                    "${NAME} ${CMAKE_CXX_COMPILER_VERSION} < ${MIN_VERSION} (required for best support C++23).")
+                message(FATAL_ERROR
+                    "${NAME} ${CMAKE_CXX_COMPILER_VERSION} is too old: "
+                    "version ${MIN_VERSION}+ is required for C++23. "
+                    "Please upgrade your compiler."
+                    "\nCompiler used: ${CMAKE_CXX_COMPILER}")
             endif()
-            
+
             message(STATUS "C++23 support verified (${NAME} ${CMAKE_CXX_COMPILER_VERSION})")
             return()
         endif()
     endforeach()
-    
-    if(NOT COMPILER_FOUND)
-        message(WARNING "Compiler '${CMAKE_CXX_COMPILER_ID}' not officially tested. Build may fail.")
-    endif()
+
+    message(WARNING "Compiler '${CMAKE_CXX_COMPILER_ID}' not officially tested. Build may fail.")
 endfunction()
 
 function(get_compiler_name OUTPUT_VAR)
