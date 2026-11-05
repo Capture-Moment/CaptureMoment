@@ -18,7 +18,7 @@ env:
 jobs:
   build:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     strategy:
       matrix:
@@ -71,8 +71,8 @@ jobs:
 
       - name: pip halide
         run: |
-            python -m pip install --only-binary :all: halide==21.0.0
-            echo "HALIDE_CMAKE_DIR=$(python -c 'import halide, os; print(os.path.dirname(halide.__file__))')" >> "$GITHUB_ENV"
+            python -m pip install --only-binary :all: halide==22.1.0
+            echo "HALIDE_PREFIX=$(python -c 'import halide; print(halide.install_dir())')" >> "$GITHUB_ENV"
 
       # ====================================================================
       # Setup ccache
@@ -187,9 +187,7 @@ jobs:
           -Dsanitizers=ON \
           ${TESTS_FLAG} \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DHALIDE_DIR="${HALIDE_CMAKE_DIR}" \
-          -DEXIV2_ROOT=${{ env.INSTALL_PREFIX }}/exiv2 \
-          -DOpenImageIO_ROOT=${{ env.INSTALL_PREFIX }}/oiio
+          -DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX}"
         shell: bash
 
       # ====================================================================
