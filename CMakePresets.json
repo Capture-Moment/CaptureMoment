@@ -302,37 +302,6 @@
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_PREFIX_PATH": "/opt/homebrew;/usr/local"
             }
-        },
-
-        {
-            "name": "release-ninja-linux",
-            "displayName": "Release (Ninja - Linux)",
-            "description": "Release build with Ninja generator, using system-installed dependencies (apt/dnf/pacman)",
-            "inherits": "base",
-            "generator": "Ninja",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
-            }
-        },
-        {
-            "name": "debug-ninja-linux",
-            "displayName": "Debug (Ninja - Linux)",
-            "description": "Debug build with Ninja generator, using system-installed dependencies (apt/dnf/pacman)",
-            "inherits": "base",
-            "generator": "Ninja",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
-            }
         }
     ],
     "buildPresets": [
@@ -453,24 +422,9 @@
             "name": "release-homebrew",
             "configurePreset": "release-homebrew",
             "displayName": "Build Release (Homebrew)"
-        },
-        {
-            "name": "release-ninja-linux",
-            "configurePreset": "release-ninja-linux",
-            "displayName": "Build Release (Ninja - Linux)"
-        },
-        {
-            "name": "debug-ninja-linux",
-            "configurePreset": "debug-ninja-linux",
-            "displayName": "Build Debug (Ninja - Linux)"
         }
     ],
     "testPresets": [
-        {
-            "name": "default",
-            "configurePreset": "debug",
-            "output": { "outputOnFailure": true }
-        },
         {
             "name": "debug-vcpkg-msvc",
             "configurePreset": "debug-vcpkg-msvc",
@@ -481,6 +435,26 @@
             "name": "release-vcpkg-msvc",
             "configurePreset": "release-vcpkg-msvc",
             "configuration": "Release",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "debug-ninja",
+            "configurePreset": "debug-ninja",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "release-ninja",
+            "configurePreset": "release-ninja",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "debug-make",
+            "configurePreset": "debug-make",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "release-make",
+            "configurePreset": "release-make",
             "output": { "outputOnFailure": true }
         }
     ]
