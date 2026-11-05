@@ -32,7 +32,7 @@ RUN mkdir -p /opt/tools && cd /opt/tools && \
 # Install Python core packages
 # ==============================================================================
 RUN pip3 install --break-system-packages cmake aqtinstall
-RUN pip3 install --break-system-packages --only-binary :all: halide==21.0.0
+RUN pip3 install --break-system-packages --only-binary :all: halide==22.1.0
 
 # ==============================================================================
 # Install Qt framework
@@ -77,9 +77,3 @@ RUN git clone https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/
     cmake --install build && \
     rm -rf /tmp/*
 WORKDIR /app
-
-
-# TMP
-RUN test "$(gcc -print-file-name=libasan.so)" != "libasan.so" && \
-    test "$(gcc -print-file-name=libubsan.so)" != "libubsan.so" && \
-    echo "libasan et libubsan OK"
