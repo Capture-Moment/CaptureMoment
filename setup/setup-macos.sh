@@ -62,7 +62,7 @@ fi
 # ==============================================================================
 # System dependencies (Homebrew formula names)
 # ==============================================================================
-echo "[1/4] Installing system dependencies..."
+echo "[1/3] Installing system dependencies..."
 brew install \
     ccache \
     spdlog curl brotli expat inih libssh \
@@ -76,7 +76,7 @@ echo "System dependencies installed."
 # ==============================================================================
 # Build and install Exiv2
 # ==============================================================================
-echo "[2/4] Building and installing Exiv2 ${EXIV2_VERSION}..."
+echo "[2/3] Building and installing Exiv2 ${EXIV2_VERSION}..."
 if [[ -d "${INSTALL_PREFIX}/exiv2" ]]; then
     echo "Exiv2 already found in ${INSTALL_PREFIX}/exiv2, skipping."
 else
@@ -103,7 +103,7 @@ fi
 # ==============================================================================
 # Build and install OpenImageIO
 # ==============================================================================
-echo "[3/4] Building and installing OpenImageIO ${OIIO_VERSION}..."
+echo "[3/3] Building and installing OpenImageIO ${OIIO_VERSION}..."
 if [[ -d "${INSTALL_PREFIX}/oiio" ]]; then
     echo "OpenImageIO already found in ${INSTALL_PREFIX}/oiio, skipping."
 else
@@ -129,22 +129,6 @@ else
     rm -rf /tmp/oiio-src /tmp/oiio-build
     echo "OpenImageIO installed successfully in ${INSTALL_PREFIX}/oiio."
 fi
-
-# ==============================================================================
-# Environment variables (persisted to shell rc if not already present)
-# ==============================================================================
-echo "[4/4] Configuring environment variables..."
-
-CM_ENV='export CMAKE_PREFIX_PATH="/opt/exiv2:/opt/oiio:${CMAKE_PREFIX_PATH}"'
-
-if ! grep -qF 'CMAKE_PREFIX_PATH="/opt/exiv2' "${SHELL_RC}"; then
-    printf '\n# CaptureMoment build environment\n%s\n' "${CM_ENV}" >> "${SHELL_RC}"
-    echo "Added CaptureMoment environment line to ${SHELL_RC}."
-else
-    echo "Environment line already present in ${SHELL_RC}, skipping."
-fi
-
-export CMAKE_PREFIX_PATH="/opt/exiv2:/opt/oiio:${CMAKE_PREFIX_PATH}"
 
 echo ""
 echo "Setup completed successfully! You can now build CaptureMoment."
