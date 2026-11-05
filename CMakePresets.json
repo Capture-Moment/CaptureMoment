@@ -23,11 +23,10 @@
             }
         },
         {
-            "name": "relwithdebinfo-ninja",
-            "displayName": "RelWithDebInfo (Ninja)",
-            "description": "Optimized build with debug symbols (profiling)",
+            "name": "relwithdebinfo",
+            "displayName": "RelWithDebInfo",
+            "description": "Optimized build with debug symbols",
             "inherits": "base",
-            "generator": "Ninja",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
