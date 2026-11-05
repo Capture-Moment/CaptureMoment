@@ -284,7 +284,7 @@
             },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_PREFIX_PATH": "/opt/homebrew;/usr/local"
+                "CMAKE_PREFIX_PATH": "/opt/exiv2;/opt/oiio;/opt/homebrew;/usr/local"
             }
         },
         {
@@ -300,7 +300,7 @@
             },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_PREFIX_PATH": "/opt/homebrew;/usr/local"
+                "CMAKE_PREFIX_PATH": "/opt/exiv2;/opt/oiio;/opt/homebrew;/usr/local"
             }
         }
     ],
@@ -456,6 +456,16 @@
             "name": "release-make",
             "configurePreset": "release-make",
             "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "debug-homebrew",
+            "configurePreset": "debug-homebrew",
+            "displayName": "Build Debug (Homebrew)"
+        },
+        {
+            "name": "release-homebrew",
+            "configurePreset": "release-homebrew",
+            "displayName": "Build Release (Homebrew)"
         }
     ]
 }
