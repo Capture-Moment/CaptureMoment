@@ -77,7 +77,7 @@ jobs:
           echo "Halide prefix: ${HALIDE_PREFIX}"
 
           cmake \
-          --preset release-ninja-linux \
+          --preset release-ninja \
           -DBUILD_DESKTOP_UI:BOOL=ON \
           -Dtests=OFF \
           -DCMAKE_BUILD_TYPE=Release \
@@ -86,17 +86,17 @@ jobs:
 
       - name: Build Project
         run: |
-          cmake --build build/release-ninja-linux --config Release --parallel $(nproc)
+          cmake --build build/release-ninja --config Release --parallel $(nproc)
         shell: bash
 
       - name: Verify build output
         run: |
-          if [ ! -f build/release-ninja-linux/CaptureMoment ]; then
+          if [ ! -f build/release-ninja/CaptureMoment ]; then
             echo "::error::CaptureMoment not found in build dir"
-            find build/release-ninja-linux -maxdepth 2 -type f -executable | head
+            find build/release-ninja -maxdepth 2 -type f -executable | head
             exit 1
           fi
-          ldd build/release-ninja-linux/CaptureMoment | grep "not found" && \
+          ldd build/release-ninja/CaptureMoment | grep "not found" && \
             echo "::error::Unresolved libraries!" && exit 1 || true
           echo "Build OK"
         shell: bash
@@ -112,7 +112,7 @@ jobs:
 
           /opt/tools/linuxdeploy-x86_64.AppImage \
             --appdir appdir \
-            --executable build/release-ninja-linux/CaptureMoment \
+            --executable build/release-ninja/CaptureMoment \
             --desktop-file assets/linux/capturemoment.desktop \
             --icon-file /tmp/capturemoment.png \
             --plugin qt \
