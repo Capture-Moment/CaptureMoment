@@ -193,7 +193,11 @@
               exit 1
             fi
 
-            macdeployqt "$APP"
+            macdeployqt "$APP" \
+            -qmldir=qt/desktop/qml \
+            -libpath=${{ env.INSTALL_PREFIX }}/oiio/lib \
+            -libpath=${{ env.INSTALL_PREFIX }}/exiv2/lib \
+            -verbose=2
 
             hdiutil create -volname CaptureMoment \
               -srcfolder "$APP" \
