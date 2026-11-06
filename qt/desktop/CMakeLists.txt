@@ -251,9 +251,11 @@ target_link_libraries(${CAPTUREMOMENT_DESKTOP_TARGET}
 include(GNUInstallDirs)
 
 if(WIN32)
-    install(DIRECTORY $<TARGET_FILE_DIR:${CAPTUREMOMENT_DESKTOP_TARGET}>/
-            DESTINATION ${CMAKE_INSTALL_BINDIR}
-            FILES_MATCHING PATTERN "*.dll")
+    add_custom_command(TARGET ${CAPTUREMOMENT_DESKTOP_TARGET} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_RUNTIME_DLLS:${CAPTUREMOMENT_DESKTOP_TARGET}>
+                $<TARGET_FILE_DIR:${CAPTUREMOMENT_DESKTOP_TARGET}>
+        COMMAND_EXPAND_LISTS)
 endif()
 
 # =====================================================================

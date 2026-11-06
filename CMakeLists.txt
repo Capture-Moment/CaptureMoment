@@ -27,6 +27,7 @@ verify_cpp23_support() # From CompilerDetection.cmake
 option(BUILD_DESKTOP_UI "Build desktop UI" OFF)
 option(BUILD_MOBILE_UI "Build mobile UI" OFF)
 option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_SANITIZERS "Build sanitizers" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_EXAMPLES "Build examples" OFF)
 
@@ -34,25 +35,23 @@ option(BUILD_EXAMPLES "Build examples" OFF)
 option(desktop_ui "Alias for BUILD_DESKTOP_UI" OFF)
 option(mobile_ui "Alias for BUILD_MOBILE_UI" OFF)
 option(tests "Alias for BUILD_TESTS" OFF)
+option(sanitizers "Alias for BUILD_SANITIZERS" OFF)
 option(benchmarks "Alias for BUILD_BENCHMARKS" OFF)
 option(examples "Alias for BUILD_EXAMPLES" OFF)
 
-# Synchronize aliases
-if(desktop_ui)
-    set(BUILD_DESKTOP_UI ON)
-endif()
-if(mobile_ui)
-    set(BUILD_MOBILE_UI ON)
-endif()
-if(tests)
-    set(BUILD_TESTS ON)
-endif()
-if(benchmarks)
-    set(BUILD_BENCHMARKS ON)
-endif()
-if(examples)
-    set(BUILD_EXAMPLES ON)
-endif()
+function(sync_alias alias target)
+    if(${alias})
+        set(${target} ON CACHE BOOL "" FORCE)
+    endif()
+endfunction()
+
+
+sync_alias(desktop_ui  BUILD_DESKTOP_UI)
+sync_alias(mobile_ui   BUILD_MOBILE_UI)
+sync_alias(tests       BUILD_TESTS)
+sync_alias(sanitizers  BUILD_SANITIZERS)
+sync_alias(benchmarks  BUILD_BENCHMARKS)
+sync_alias(examples    BUILD_EXAMPLES)
 
 # ============================================================
 # Configuration Qt file generation
@@ -74,6 +73,13 @@ configure_vcpkg_if_present() # From VcpkgHelpers.cmake
 # Find dependencies
 # ============================================================
 find_required_packages() # From PackageHelpers.cmake
+
+# ============================================================
+# Enable sanitizers if requested
+# ============================================================
+if(BUILD_SANITIZERS)
+    include(Sanitizers)
+endif()
 
 # ============================================================
 # Global configuration
@@ -149,6 +155,7 @@ message(STATUS "║  Build Options:                                            �
 message(STATUS "║    Desktop UI    : ${BUILD_DESKTOP_UI}")
 message(STATUS "║    Mobile UI     : ${BUILD_MOBILE_UI}")
 message(STATUS "║    Tests         : ${BUILD_TESTS}")
+message(STATUS "║    Sanitizers    : ${BUILD_SANITIZERS}")
 message(STATUS "║    Benchmarks    : ${BUILD_BENCHMARKS}")
 message(STATUS "║    Examples      : ${BUILD_EXAMPLES}")
 message(STATUS "╚════════════════════════════════════════════════════════════╝")

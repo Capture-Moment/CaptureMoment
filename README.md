@@ -44,22 +44,24 @@ Capture Moment is built for performance and modularity, using best-in-class libr
 
 |     Component    |      Technology     |                              Role                             |
 |:----------------:|:-------------------:|:-------------------------------------------------------------:|
-| Language         | C++20 / C++23       | Core Logic, Speed, and Control.                               |
-| Build System     | CMake 4.2+         | Cross-platform build configuration.                           |
-| I/O & Cache      | OpenImageIO         | Read/Write all image formats, Tile-based caching.             |
-| Processing       | Halide              | High-performance image processing pipeline optimization.      |
-| UI               | Qt6 Quick/QML      | Modern, declarative, and hardware-accelerated user interface. |
+| Language         | C++20 / C++23       | Core Logic, Speed, and Control                               |
+| Build System     | CMake 4.2+         | Cross-platform build configuration                           |
+| I/O & Cache      | OpenImageIO         | Read/Write all image formats, Tile-based caching             |
+| Processing       | Halide              | High-performance image processing pipeline optimization      |
+| UI               | Qt6 Quick/QML      | Modern, declarative, and hardware-accelerated user interface |
 | Color Management | OpenColorIO (already included in OpenImageIO)       | Industry-standard color space handling (Planned).             |
-| Cataloging       | SQLite              | Fast, embeddable database for photo indexing.                 |
+| Cataloging       | SQLite              | Fast, embeddable database for photo indexing                 |
 | Serialization    | Exiv2 (XMP) | Storing non-destructive Image    |
-| setting    | JSON | Edits application settings.       |
+| Setting    | JSON | Edits application settings       |
+| Tests    | GoogleTest | Test the project       |
+
 ---
 
 ## 📋 Documentation & Specs
 
 For a detailed view of the architecture, technical choices, roadmap, and planned features:  
 
-[➡️ Read the General Architecture Document](./docs/architecture/GENERAL_ARCHITECTURE.md).
+[➡️ Read the documentation](https://capture-moment.github.io/docs/).
 
 ---
 
@@ -67,7 +69,7 @@ For a detailed view of the architecture, technical choices, roadmap, and planned
 
 For detailed build instructions for each platform (Windows, macOS, Linux) and using various package managers (Vcpkg, Homebrew, apt/dnf):
 
-[➡️ Read the full Build Guide](./docs/building/BUILDING_MAIN.md).
+[➡️ Read the full Build Guide](https://capture-moment.github.io/docs/building/BUILDING_MAIN/).
 
 ---
 
@@ -75,7 +77,7 @@ For detailed build instructions for each platform (Windows, macOS, Linux) and us
 
 Contributions are welcome! Whether you are a C++ developer, a designer, a tester, or a technical writer, your help is appreciated:
 
-[➡️ Please read the Contribution Guide ](./docs/CONTRIBUTING.md) for details on setting up your environment and submitting changes.
+[➡️ Please read the Contribution Guide ](https://capture-moment.github.io/docs/guidelines/CONTRIBUTING/) for details on setting up your environment and submitting changes.
 
 ---
 
