@@ -195,6 +195,7 @@
 
         - name: Verify Halide in bundle
           run: |
+           ls -l ${HALIDE_PREFIX}/lib/
            APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
 
            echo "::group::1. What the main executable links (look for halide)"
@@ -219,7 +220,7 @@
            find "$APP/Contents" -maxdepth 3 -print
            echo "::endgroup::"
           shell: bash
-          
+
         - name: Upload installer artifact (always, for manual test runs)
           if: always()
           uses: actions/upload-artifact@v4
