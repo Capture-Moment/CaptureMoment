@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - 'v*'
-
+  workflow_dispatch:
 env:
   CMAKE_GENERATOR: Ninja
 
@@ -129,10 +129,20 @@ jobs:
           ls -lh CaptureMoment-x86_64.AppImage
         shell: bash
 
+      - name: Upload installer artifact (always, for manual test runs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CaptureMoment-linux-installer
+          path: CaptureMoment-x86_64.AppImage
+
+
       - name: Upload AppImage to Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           files: CaptureMoment-x86_64.AppImage
+          prerelease: ${{ contains(github.ref_name, 'test') }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
