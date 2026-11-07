@@ -71,7 +71,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
-            wget gnupg lsb-release software-properties-common ca-certificates \
+            wget gnupg lsb-release ca-certificates \
             jq ccache
           wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh
           bash /tmp/llvm.sh "${CLANG_VERSION}"
