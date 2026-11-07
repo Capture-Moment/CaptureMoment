@@ -1,0 +1,212 @@
+name: clang-tidy
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore: ['**.md', 'docs/**']
+  pull_request:
+    branches: [main, develop]
+    paths-ignore: ['**.md', 'docs/**']
+  workflow_dispatch:
+
+concurrency:
+  group: clang-tidy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CLANG_VERSION: "23"
+  BUILD_DIR: build/debug-ninja
+  # Warning ceilings (unique warnings). Lower them as the code is cleaned up.
+  # First run: read the count in the summary, then set the limit just above it.
+  FULL_WARNING_LIMIT: "99999"
+  # In a PR, only changed files are analysed: no new warnings allowed.
+  PR_WARNING_LIMIT: "0"
+
+jobs:
+  # GHCR requires a lowercase image name; the 'container:' key cannot do it.
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.img.outputs.ref }}
+    steps:
+      - id: img
+        run: echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}/build-linux:latest" >> "$GITHUB_OUTPUT"
+
+  clang-tidy:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read
+
+    container:
+      image: ${{ needs.prepare.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      # ====================================================================
+      # Checkout
+      # ====================================================================
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Mark workspace as safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      # ====================================================================
+      # Toolchain: clang + clang-tidy (compile_commands.json is produced by
+      # clang, so clang-tidy never sees GCC-only flags)
+      # ====================================================================
+      - name: Install clang toolchain
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            wget gnupg lsb-release software-properties-common ca-certificates \
+            jq ccache
+          wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh
+          bash /tmp/llvm.sh "${CLANG_VERSION}"
+          apt-get install -y --no-install-recommends \
+            "clang-${CLANG_VERSION}" "clang-tidy-${CLANG_VERSION}" "clang-tools-${CLANG_VERSION}"
+          clang-tidy-${CLANG_VERSION} --version
+
+      # ====================================================================
+      # Configure + build (generates moc / rcc / qml sources that
+      # clang-tidy needs in order to parse the project)
+      # ====================================================================
+      - name: Configure
+        env:
+          CC: clang-${{ env.CLANG_VERSION }}
+          CXX: clang++-${{ env.CLANG_VERSION }}
+        run: |
+          HALIDE_PREFIX=$(python3 -c 'import halide; print(halide.install_dir())')
+          cmake --preset debug-ninja \
+            -DBUILD_DESKTOP_UI:BOOL=ON \
+            -DBUILD_TESTS:BOOL=ON \
+            -DBUILD_SANITIZERS:BOOL=ON \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2;${HALIDE_PREFIX}"
+
+      - name: Build (generated sources)
+        run: cmake --build "${BUILD_DIR}" --parallel "$(nproc)"
+
+      # ====================================================================
+      # Select files: PR -> changed .cpp files; push -> everything.
+      # A changed header triggers a full analysis (headers are only reached
+      # through the .cpp files that include them).
+      # ====================================================================
+      - name: Select files to analyse
+        id: select
+        run: |
+          MODE=full
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            CHANGED=$(git diff --name-only --diff-filter=ACMR "${BASE}...HEAD")
+            if echo "${CHANGED}" | grep -qE '\.(h|hpp|hxx)$|CMakeLists\.txt$|\.cmake$|\.clang-tidy$'; then
+              MODE=full
+            else
+              MODE=changed
+            fi
+          fi
+
+          if [ "${MODE}" = "changed" ]; then
+            echo "${CHANGED}" | grep -E '\.(cpp|cc|cxx)$' > /tmp/candidates.txt || true
+          else
+            git ls-files '*.cpp' '*.cc' '*.cxx' > /tmp/candidates.txt
+          fi
+
+          # Keep only first-party files that exist in the compilation database
+          jq -r '.[].file' "${BUILD_DIR}/compile_commands.json" | sort -u > /tmp/in_db.txt
+          grep -Ev '^(build|third_party|extern|vcpkg_installed|\.github)/' /tmp/candidates.txt \
+            | sed "s|^|${GITHUB_WORKSPACE}/|" | sort -u > /tmp/wanted.txt || true
+          comm -12 /tmp/wanted.txt /tmp/in_db.txt > /tmp/files.txt
+
+          COUNT=$(wc -l < /tmp/files.txt)
+          echo "Mode: ${MODE}, files to analyse: ${COUNT}"
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+          echo "count=${COUNT}" >> "$GITHUB_OUTPUT"
+          if [ "${MODE}" = "full" ]; then
+            echo "limit=${FULL_WARNING_LIMIT}" >> "$GITHUB_OUTPUT"
+          else
+            echo "limit=${PR_WARNING_LIMIT}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ====================================================================
+      # Run clang-tidy
+      # ====================================================================
+      - name: Run clang-tidy
+        if: steps.select.outputs.count != '0'
+        run: |
+          run-clang-tidy-${CLANG_VERSION} \
+            -clang-tidy-binary "$(command -v clang-tidy-${CLANG_VERSION})" \
+            -p "${BUILD_DIR}" \
+            -quiet \
+            -j "$(nproc)" \
+            $(cat /tmp/files.txt) \
+            2>&1 | tee clang-tidy.log || true
+
+      # ====================================================================
+      # Analyse the log: unique warnings + top checks in the job summary
+      # ====================================================================
+      - name: Analyse clang-tidy output
+        id: analyze
+        run: |
+          touch clang-tidy.log
+          grep -E '^/.*: (warning|error): .*\[[A-Za-z0-9.,_-]+\]$' clang-tidy.log \
+            | grep -Ev '/(build|_deps|third_party|vcpkg_installed)/' \
+            | sort -u > warnings.txt || true
+          COUNT=$(wc -l < warnings.txt)
+          echo "warning_count=${COUNT}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## clang-tidy (${{ steps.select.outputs.mode }} mode)"
+            echo ""
+            echo "- Files analysed: ${{ steps.select.outputs.count }}"
+            echo "- Unique warnings: **${COUNT}** (limit: ${{ steps.select.outputs.limit }})"
+            echo ""
+            echo "### Top checks"
+            echo '```'
+            grep -oE '\[[A-Za-z0-9.,_-]+\]$' warnings.txt | sort | uniq -c | sort -rn | head -20 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Inline annotations (first 50 only, GitHub caps the number shown)
+          head -n 50 warnings.txt | while IFS= read -r line; do
+            file=$(echo "$line" | cut -d: -f1)
+            ln=$(echo "$line" | cut -d: -f2)
+            msg=$(echo "$line" | cut -d: -f5-)
+            echo "::warning file=${file#${GITHUB_WORKSPACE}/},line=${ln}::${msg}"
+          done
+
+      - name: Upload logs and warnings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-report
+          path: |
+            clang-tidy.log
+            warnings.txt
+          if-no-files-found: warn
+
+      # ====================================================================
+      # Gate
+      # ====================================================================
+      - name: Check warning limit
+        env:
+          COUNT: ${{ steps.analyze.outputs.warning_count }}
+          LIMIT: ${{ steps.select.outputs.limit }}
+        run: |
+          echo "clang-tidy: ${COUNT} unique warning(s), limit ${LIMIT}"
+          if [ "${COUNT}" -gt "${LIMIT}" ]; then
+            echo "::error::${COUNT} warning(s) exceed the limit of ${LIMIT}. See the 'clang-tidy-report' artifact."
+            exit 1
+          fi
