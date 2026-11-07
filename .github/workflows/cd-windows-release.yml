@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 env:
   USERNAME: ${{ github.repository_owner }}
@@ -141,9 +142,19 @@ jobs:
               -B build/release-vcpkg-msvc/packages
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
+      - name: Upload installer artifact (always, for manual test runs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CaptureMoment-win64-installer
+          path: build/release-vcpkg-msvc/packages/CaptureMoment-win64.exe
+
       - name: Upload Installer to Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           files: build/release-vcpkg-msvc/packages/CaptureMoment-win64.exe
+          prerelease: ${{ contains(github.ref_name, 'test') }}
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
