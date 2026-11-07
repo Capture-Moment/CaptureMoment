@@ -170,7 +170,30 @@
           shell: bash
           
         - name: Build Project
-          run: cmake --build build/release-homebrew --config Release --parallel $(sysctl -n hw.ncpu)       - name: Verify Halide in bundle
+          run: cmake --build build/release-homebrew --config Release --parallel $(sysctl -n hw.ncpu)
+
+        - name: Package DMG via hdiutil
+          run: |
+            APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
+
+            if [ ! -d "$APP" ]; then
+              echo "::error::Bundle not found : $APP"
+              find build/release-homebrew -name "*.app"
+              exit 1
+            fi
+
+            macdeployqt "$APP" \
+            -qmldir=qt/desktop/qml \
+            -libpath=${{ env.INSTALL_PREFIX }}/oiio/lib \
+            -libpath=${{ env.INSTALL_PREFIX }}/exiv2/lib \
+            -verbose=2
+
+            hdiutil create -volname CaptureMoment \
+              -srcfolder "$APP" \
+              -ov -format UDZO "build/release-homebrew/CaptureMoment.dmg"
+
+
+        - name: Verify Halide in bundle
           run: |
            APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
 
@@ -196,27 +219,7 @@
            find "$APP/Contents" -maxdepth 3 -print
            echo "::endgroup::"
           shell: bash
-
-        - name: Package DMG via hdiutil
-          run: |
-            APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
-
-            if [ ! -d "$APP" ]; then
-              echo "::error::Bundle not found : $APP"
-              find build/release-homebrew -name "*.app"
-              exit 1
-            fi
-
-            macdeployqt "$APP" \
-            -qmldir=qt/desktop/qml \
-            -libpath=${{ env.INSTALL_PREFIX }}/oiio/lib \
-            -libpath=${{ env.INSTALL_PREFIX }}/exiv2/lib \
-            -verbose=2
-
-            hdiutil create -volname CaptureMoment \
-              -srcfolder "$APP" \
-              -ov -format UDZO "build/release-homebrew/CaptureMoment.dmg"
-
+          
         - name: Upload installer artifact (always, for manual test runs)
           if: always()
           uses: actions/upload-artifact@v4
