@@ -162,46 +162,49 @@
         # ====================================================================
         - name: Configure CMake
           run: |
-           TESTS_FLAG="-Dtests=OFF"
-
-           if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
-             TESTS_FLAG="-Dtests=ON"
-             echo "::notice file=tests::the directory 'tests' exists and is not empty. Tests enabled."
-           else
-             echo "::warning file=tests::the directory 'tests' is empty or missing. Tests disabled (Tests:OFF)."
-           fi
-
            cmake \
            --preset release-homebrew \
            -Ddesktop_ui=ON \
-           ${TESTS_FLAG} \
            -DCMAKE_BUILD_TYPE=Release \
-           -DCMAKE_PREFIX_PATH=${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX};/opt/homebrew;${CMAKE_PREFIX_PATH}"
+           -DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX};/opt/homebrew;${CMAKE_PREFIX_PATH}"
           shell: bash
-          
           
         - name: Build Project
           run: cmake --build build/release-homebrew --config Release --parallel $(sysctl -n hw.ncpu)
         
+        - name: Package App via macdeployqt
+          run: |
+           APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
+
+           if [ ! -d "$APP" ]; then
+             echo "::error::Bundle not found : $APP"
+             find build/release-homebrew -name "*.app"
+             exit 1
+           fi
+
+           macdeployqt "$APP" \
+           -qmldir=qt/desktop/qml \
+           -verbose=2
+
+        - name: Copy third-party dylibs into bundle
+          run: |
+           APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
+           FW="$APP/Contents/Frameworks"
+
+           cp -L ${HALIDE_PREFIX}/lib/libHalide.dylib "$FW/"
+           cp -a ${{ env.INSTALL_PREFIX }}/oiio/lib/libOpenImageIO*.dylib "$FW/"
+           cp -a ${{ env.INSTALL_PREFIX }}/exiv2/lib/libexiv2*.dylib "$FW/"
+
+           strip -x "$FW/libHalide.dylib"
+
+           ls -lh "$FW"
+          shell: bash
+
         - name: Package DMG via hdiutil
           run: |
-            APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
-
-            if [ ! -d "$APP" ]; then
-              echo "::error::Bundle not found : $APP"
-              find build/release-homebrew -name "*.app"
-              exit 1
-            fi
-
-            macdeployqt "$APP" \
-            -qmldir=qt/desktop/qml \
-            -libpath=${{ env.INSTALL_PREFIX }}/oiio/lib \
-            -libpath=${{ env.INSTALL_PREFIX }}/exiv2/lib \
-            -verbose=2
-
-            hdiutil create -volname CaptureMoment \
-              -srcfolder "$APP" \
-              -ov -format UDZO "build/release-homebrew/CaptureMoment.dmg"
+           hdiutil create -volname CaptureMoment \
+            -srcfolder "build/release-homebrew/qt/desktop/CaptureMoment.app" \
+            -ov -format UDZO "build/release-homebrew/CaptureMoment.dmg"
 
         - name: Upload installer artifact (always, for manual test runs)
           if: always()
