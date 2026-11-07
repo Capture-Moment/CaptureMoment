@@ -171,7 +171,33 @@
           
         - name: Build Project
           run: cmake --build build/release-homebrew --config Release --parallel $(sysctl -n hw.ncpu)
-        
+        - name: Verify Halide in bundle
+          run: |
+           APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
+
+           echo "::group::1. What the main executable links (look for halide)"
+           otool -L "$APP/Contents/MacOS/CaptureMoment" | grep -i halide \
+            || echo ">> executable does not link halide dynamically"
+           echo "::endgroup::"
+
+           echo "::group::2. Every binary in the bundle that references halide"
+           find "$APP" -type f \( -name "*.dylib" -o -name "CaptureMoment*" \) | while read -r f; do
+             if otool -L "$f" 2>/dev/null | grep -qi halide; then
+              echo "LINKED: $f"
+              otool -L "$f" | grep -i halide
+            fi
+           done
+           echo "::endgroup::"
+
+           echo "::group::3. Halide files physically present in the bundle"
+           find "$APP" -iname "*halide*"
+           echo "::endgroup::"
+
+           echo "::group::4. Full Contents listing (for the logs)"
+           find "$APP/Contents" -maxdepth 3 -print
+           echo "::endgroup::"
+          shell: bash
+
         - name: Package DMG via hdiutil
           run: |
             APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
