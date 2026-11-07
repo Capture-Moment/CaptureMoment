@@ -4,6 +4,7 @@
     push:
       tags:
         - 'v*'
+    workflow_dispatch:
 
   env:
    CMAKE_GENERATOR: Ninja
@@ -35,7 +36,6 @@
         - name: Install Homebrew dependencies
           run: |
             brew update
-            brew install ccache
 
             # spdlog dependencies
             brew install spdlog
@@ -49,7 +49,7 @@
             # OpenColorIO dependencies
             brew install pystring
 
-            brew list --versions spdlog ccache
+            brew list --versions spdlogF
 
       # ====================================================================
       # Setup Python and install Halide via pip
@@ -176,7 +176,7 @@
            -Ddesktop_ui=ON \
            ${TESTS_FLAG} \
            -DCMAKE_BUILD_TYPE=Release \
-           -DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX}"
+           -DCMAKE_PREFIX_PATH=-DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX};/opt/homebrew;${CMAKE_PREFIX_PATH}"
           shell: bash
           
           
@@ -202,10 +202,21 @@
             hdiutil create -volname CaptureMoment \
               -srcfolder "$APP" \
               -ov -format UDZO "build/release-homebrew/CaptureMoment.dmg"
+
+        - name: Upload installer artifact (always, for manual test runs)
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: CaptureMoment-macOS-installer
+            path: build/release-homebrew/CaptureMoment.dmg
+
+
         - name: Create GitHub Release
+          if: startsWith(github.ref, 'refs/tags/v')
           uses: softprops/action-gh-release@v3
           with:
             files: build/release-homebrew/CaptureMoment.dmg
+            prerelease: ${{ contains(github.ref_name, 'test') }}
             generate_release_notes: true
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
