@@ -170,8 +170,7 @@
           shell: bash
           
         - name: Build Project
-          run: cmake --build build/release-homebrew --config Release --parallel $(sysctl -n hw.ncpu)
-        - name: Verify Halide in bundle
+          run: cmake --build build/release-homebrew --config Release --parallel $(sysctl -n hw.ncpu)       - name: Verify Halide in bundle
           run: |
            APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
 
