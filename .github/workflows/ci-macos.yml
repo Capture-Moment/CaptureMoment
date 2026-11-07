@@ -172,20 +172,11 @@ jobs:
       # ====================================================================
       - name: Configure CMake
         run: |
-          TESTS_FLAG=""
-
-          if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
-            TESTS_FLAG="-Dtests=ON"
-            echo "::notice file=tests::the directory 'tests' exists and is not empty. Tests enabled."
-          else
-            echo "::warning file=tests::the directory 'tests' is empty or missing. Tests disabled (Tests:OFF)."
-          fi
-
           cmake \
           --preset ${{ matrix.preset }} \
           -Ddesktop_ui=ON \
           -Dsanitizers=ON \
-          ${TESTS_FLAG} \
+          -Dtests=ON \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX}"
         shell: bash

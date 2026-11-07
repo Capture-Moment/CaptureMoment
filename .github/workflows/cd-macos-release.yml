@@ -162,23 +162,12 @@
         # ====================================================================
         - name: Configure CMake
           run: |
-           TESTS_FLAG="-Dtests=OFF"
-
-           if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
-             TESTS_FLAG="-Dtests=ON"
-             echo "::notice file=tests::the directory 'tests' exists and is not empty. Tests enabled."
-           else
-             echo "::warning file=tests::the directory 'tests' is empty or missing. Tests disabled (Tests:OFF)."
-           fi
-
            cmake \
            --preset release-homebrew \
            -Ddesktop_ui=ON \
-           ${TESTS_FLAG} \
            -DCMAKE_BUILD_TYPE=Release \
-           -DCMAKE_PREFIX_PATH=${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX};/opt/homebrew;${CMAKE_PREFIX_PATH}"
+           -DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX};/opt/homebrew;${CMAKE_PREFIX_PATH}"
           shell: bash
-          
           
         - name: Build Project
           run: cmake --build build/release-homebrew --config Release --parallel $(sysctl -n hw.ncpu)
