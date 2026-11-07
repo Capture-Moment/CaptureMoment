@@ -66,10 +66,8 @@ jobs:
     container:
       image: ${{ needs.build-docker.outputs.image_uri }}
       credentials:
-        registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-
 
     steps:
       - name: Checkout repository
