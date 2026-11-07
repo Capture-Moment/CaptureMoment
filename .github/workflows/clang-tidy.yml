@@ -33,7 +33,7 @@ jobs:
       image: ${{ steps.img.outputs.ref }}
     steps:
       - id: img
-        run: echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}/build-linux:latest" >> "$GITHUB_OUTPUT"
+        run: echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}/build-linux:ci" >> "$GITHUB_OUTPUT"
 
   clang-tidy:
     needs: prepare
