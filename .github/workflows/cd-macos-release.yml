@@ -176,7 +176,7 @@
            -Ddesktop_ui=ON \
            ${TESTS_FLAG} \
            -DCMAKE_BUILD_TYPE=Release \
-           -DCMAKE_PREFIX_PATH=-DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX};/opt/homebrew;${CMAKE_PREFIX_PATH}"
+           -DCMAKE_PREFIX_PATH=${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio;${HALIDE_PREFIX};/opt/homebrew;${CMAKE_PREFIX_PATH}"
           shell: bash
           
           
