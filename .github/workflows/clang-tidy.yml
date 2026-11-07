@@ -89,14 +89,12 @@ jobs:
           CXX: clang++-${{ env.CLANG_VERSION }}
         run: |
           HALIDE_PREFIX=$(python3 -c 'import halide; print(halide.install_dir())')
-          GCC_DIR=$(ls -d /usr/lib/gcc/x86_64-linux-gnu/*/ | sort -V | tail -1)
-          echo "Using GCC headers from: ${GCC_DIR}"
           cmake --preset debug-ninja \
             -DBUILD_DESKTOP_UI:BOOL=ON \
             -DBUILD_TESTS:BOOL=ON \
             -DBUILD_SANITIZERS:BOOL=ON \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_FLAGS="--gcc-install-dir=${GCC_DIR%/}" \
+            -DCMAKE_CXX_FLAGS="--gcc-toolchain=/usr/local" \
             -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2;${HALIDE_PREFIX}"
 
       - name: Build (generated sources)
