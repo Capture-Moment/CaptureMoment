@@ -11,7 +11,6 @@
 #include <string_view>
 #include <cstdint>
 #include <format>
-#include <fmt/core.h>
 
 namespace CaptureMoment::Core {
 
@@ -242,39 +241,12 @@ enum class CoreErrorCategory : uint8_t {
  * @details Enables direct formatting with spdlog/std::format (e.g., "{}", CoreError::FileNotFound).
  */
 template <>
-struct std::formatter<CaptureMoment::Core::ErrorHandling::CoreError> : std::formatter<std::string_view>
+struct std::formatter<CaptureMoment::Core::ErrorHandling::CoreError>
+    : std::formatter<std::string_view>
 {
-    template <typename FormatContext>
-    auto format(const CaptureMoment::Core::ErrorHandling::CoreError code, FormatContext& ctx) const
+    auto format(CaptureMoment::Core::ErrorHandling::CoreError code, auto& ctx) const
     {
         return std::formatter<std::string_view>::format(
             CaptureMoment::Core::ErrorHandling::to_string(code), ctx);
-    }
-};
-/**
- * @brief fmt::formatter specialization for CoreError.
- * @details Enables direct formatting with spdlog/fmt.
- * 
- *          We manually write to the output iterator here instead of inheriting from
- *          fmt::formatter<std::string_view>. This avoids triggering an ODR violation
- *          and "partial specialization after instantiation" errors on GCC 16 caused by
- *          OpenImageIO bundling its own conflicting version of fmt.
- */
-template <>
-struct fmt::formatter<CaptureMoment::Core::ErrorHandling::CoreError>
-{
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
-        return ctx.begin();
-    }
-
-    template <typename FormatContext>
-    auto format(const CaptureMoment::Core::ErrorHandling::CoreError& code, FormatContext& ctx) const {
-        const auto sv { CaptureMoment::Core::ErrorHandling::to_string(code) };
-        auto out = ctx.out();
-        for (const char c : sv) {
-            *out++ = c;
-        }
-        return out;
     }
 };
