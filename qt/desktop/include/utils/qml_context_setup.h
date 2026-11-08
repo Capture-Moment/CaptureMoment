@@ -47,6 +47,17 @@ public:
     static bool setupContext(QQmlContext* context);
 
     /**
+     * @brief Releases the objects created by setupContext().
+     *
+     * Must be called before main() returns, while spdlog and the Qt application
+     * are still alive. The static members below are otherwise destroyed by
+     * __cxa_finalize() during exit(), at which point spdlog's registry is
+     * already gone and the controller destructors - which log, and join a
+     * QThread - crash.
+     */
+    static void shutdown();
+
+    /**
      * @brief Sets the SerializerController instance to be registered with the QML context.
      * This must be called before setupContext.
      * @param ui_serializer_controller A unique pointer to the SerializerController instance.

@@ -62,6 +62,15 @@ static bool should_test_feature(Halide::Target::Feature feature)
 #endif
 
     case Halide::Target::CUDA:
+#ifdef __APPLE__
+        // Apple dropped CUDA driver support after macOS 10.13; testing it only
+        // wastes a JIT compilation.
+        spdlog::debug("[BackendDecider] CUDA skipped - not available on this platform");
+        return false;
+#else
+        return true;
+#endif
+
     case Halide::Target::OpenCL:
     case Halide::Target::Vulkan:
         return true;
@@ -263,6 +272,17 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
 {
     try
     {
+        // Step 0: Install a JIT error handler for this probe.
+        // Device-side failures (a missing driver, no compatible device) are
+        // reported through halide_error(). Without a user context Halide falls
+        // back to halide_default_error(), which prints to stderr and calls
+        // abort() - killing the application before our catch blocks ever run.
+        // Passing a context makes those failures return an error code instead.
+        Halide::JITUserContext jit_context;
+        jit_context.handlers.custom_error = [](Halide::JITUserContext*, const char* msg) {
+            spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: Halide runtime error: {}", msg);
+        };
+
         // Step 1: Create target with GPU feature
         Halide::Target target { Halide::get_host_target() };
         target.set_feature(feature);
@@ -287,7 +307,7 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         // Step 4: Copy to device
         // The buffer is fresh, so no interface conflict can occur
         work_buffer.set_host_dirty();
-        int copy_res = work_buffer.copy_to_device(target);
+        int copy_res = work_buffer.copy_to_device(target, &jit_context);
         if (copy_res != 0)
         {
             spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - copy_to_device failed (err: {}), no GPU device available",
@@ -302,7 +322,7 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         try
         {
             result = pipeline.realize(
-                {k_benchmark_width, k_benchmark_height, k_benchmark_channels}, target);
+                &jit_context, {k_benchmark_width, k_benchmark_height, k_benchmark_channels}, target);
         }
         catch (const Halide::Error& e)
         {

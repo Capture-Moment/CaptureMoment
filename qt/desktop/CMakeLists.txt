@@ -225,6 +225,31 @@ if(APPLE)
         MACOSX_BUNDLE_ICON_FILE "favicon.icns"
     )
     set(deploy_tool_options_arg "")
+
+    # Stage the non-Qt dependencies inside the bundle BEFORE the Qt deploy
+    # script runs.
+    #
+    # Halide, OpenImageIO and Exiv2 are linked through @rpath, and the install
+    # step drops the build-tree rpaths that pointed at /opt/oiio, /opt/exiv2 and
+    # the Halide virtualenv. macdeployqt then only searches Contents/Frameworks
+    # and fails with "Cannot resolve rpath". Copying them there first lets it
+    # find them, rewrite their install names, and recursively pull in their own
+    # dependencies (libtiff, OpenEXR, libraw, ...) so the bundle is complete.
+    # TARGET_SONAME_FILE is the name the binary actually links against
+    # (libOpenImageIO.3.1.dylib), which on these installs is a symlink;
+    # FOLLOW_SYMLINK_CHAIN brings the link and its target (libOpenImageIO.3.1.14.dylib).
+    install(CODE "
+        file(INSTALL
+            DESTINATION \"\${CMAKE_INSTALL_PREFIX}/$<TARGET_FILE_NAME:${CAPTUREMOMENT_DESKTOP_TARGET}>.app/Contents/Frameworks\"
+            TYPE SHARED_LIBRARY
+            FOLLOW_SYMLINK_CHAIN
+            FILES
+                \"$<TARGET_SONAME_FILE:Halide::Halide>\"
+                \"$<TARGET_SONAME_FILE:OpenImageIO::OpenImageIO>\"
+                \"$<TARGET_SONAME_FILE:OpenImageIO::OpenImageIO_Util>\"
+                \"$<TARGET_SONAME_FILE:Exiv2::exiv2lib>\"
+        )
+    ")
 endif()
 
 
@@ -237,6 +262,43 @@ qt_generate_deploy_qml_app_script(
     DEPLOY_TOOL_OPTIONS ${deploy_tool_options_arg}
 )
 install(SCRIPT ${deploy_script})
+
+if(APPLE)
+    # A few Homebrew dylibs keep their original absolute install name (their own
+    # LC_ID_DYLIB) after deployment. Nothing resolves through it - every
+    # reference was rewritten to @loader_path - but normalising it keeps the
+    # bundle free of any host path. Must run before signing: install_name_tool
+    # invalidates signatures.
+    install(CODE "
+        file(GLOB _bundled_dylibs
+             \"\${CMAKE_INSTALL_PREFIX}/$<TARGET_FILE_NAME:${CAPTUREMOMENT_DESKTOP_TARGET}>.app/Contents/Frameworks/*.dylib\")
+        foreach(_lib IN LISTS _bundled_dylibs)
+            if(IS_SYMLINK \"\${_lib}\")
+                continue()
+            endif()
+            execute_process(COMMAND otool -D \"\${_lib}\" OUTPUT_VARIABLE _id OUTPUT_STRIP_TRAILING_WHITESPACE)
+            string(REGEX REPLACE \".*\\n\" \"\" _id \"\${_id}\")
+            if(_id MATCHES \"^/\" AND NOT _id MATCHES \"^/(usr/lib|System)/\")
+                get_filename_component(_name \"\${_lib}\" NAME)
+                execute_process(COMMAND install_name_tool -id \"@rpath/\${_name}\" \"\${_lib}\")
+            endif()
+        endforeach()
+    ")
+
+    # macdeployqt rewrites install names with install_name_tool, which
+    # invalidates the code signature of every dylib it touches. arm64 macOS
+    # refuses to load a library whose signature does not verify, so re-sign the
+    # whole bundle ad-hoc. A real Developer ID signature (for distribution
+    # outside your own machines) can replace "-" here.
+    install(CODE "
+        message(STATUS \"Ad-hoc signing bundle...\")
+        execute_process(
+            COMMAND codesign --force --deep --sign - --timestamp=none
+                    \"\${CMAKE_INSTALL_PREFIX}/$<TARGET_FILE_NAME:${CAPTUREMOMENT_DESKTOP_TARGET}>.app\"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+    ")
+endif()
 
 # =====================================================================
 # End

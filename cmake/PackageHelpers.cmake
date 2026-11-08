@@ -100,21 +100,46 @@ endfunction()
 
 # ============================================================
 # Find Halide
+#
+# Halide is distributed as a pip wheel (halide / halide-bin /
+# halide-runtime). The setup scripts install it in a project-local
+# virtualenv, so look there first, then fall back to an explicit
+# HALIDE_PREFIX, an active virtualenv, or a system-wide install.
 # ============================================================
 function(find_halide_package)
 
     message(STATUS "Searching for Halide...")
 
-    # Help CMake find pip wheels installed in the active venv
-    if(DEFINED ENV{VIRTUAL_ENV})
-        list(APPEND CMAKE_PREFIX_PATH "$ENV{VIRTUAL_ENV}")
+    # Explicit override wins (exported by the setup scripts / CI)
+    if(DEFINED ENV{HALIDE_PREFIX})
+        list(APPEND CMAKE_PREFIX_PATH "$ENV{HALIDE_PREFIX}")
     endif()
+
+    # Ask the virtualenv's Python where the wheel installed Halide.
+    # Covers both the project-local .venv and any activated virtualenv.
+    foreach(_venv "${CMAKE_SOURCE_DIR}/.venv" "$ENV{VIRTUAL_ENV}")
+        if(EXISTS "${_venv}/bin/python")
+            execute_process(
+                COMMAND "${_venv}/bin/python" -c "import halide; print(halide.install_dir())"
+                OUTPUT_VARIABLE _halide_dir
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+                RESULT_VARIABLE _halide_query
+            )
+            if(_halide_query EQUAL 0 AND EXISTS "${_halide_dir}")
+                list(APPEND CMAKE_PREFIX_PATH "${_halide_dir}")
+            endif()
+        endif()
+    endforeach()
 
     find_package(Halide 22.1 CONFIG QUIET)
 
     if(NOT Halide_FOUND)
         message(FATAL_ERROR
             "Halide 22.1+ not found.\n"
+            "Install the wheel into the project virtualenv "
+            "(python -m venv .venv && .venv/bin/pip install halide==22.1.0), "
+            "or set HALIDE_PREFIX to an existing install.\n"
             "See the installation guide:\n"
             "https://capture-moment.github.io/docs/")
     endif()
