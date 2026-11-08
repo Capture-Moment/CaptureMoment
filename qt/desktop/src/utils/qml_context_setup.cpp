@@ -109,6 +109,16 @@ bool QmlContextSetup::registerCoreToQml(QQmlContext* context)
     return true;
 }
 
+void QmlContextSetup::shutdown()
+{
+    spdlog::debug("QmlContextSetup::shutdown: Releasing QML context objects...");
+
+    m_serializer_controller.reset();
+    m_controller_main_scene.reset();
+
+    spdlog::debug("QmlContextSetup::shutdown: QML context objects released.");
+}
+
 void QmlContextSetup::setSerializerController(std::unique_ptr<Serializer::SerializerController> serializer_controller)
 {
     m_serializer_controller = std::move(serializer_controller);
