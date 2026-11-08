@@ -63,10 +63,11 @@ Checks: >-
 # CI counts warnings against a ceiling; not errors here.
 WarningsAsErrors: ''
 
-# Report diagnostics only from project headers, not build/deps/system paths.
-# (ExcludeHeaderFilterRegex requires clang-tidy >= 18; check --dump-config.)
-HeaderFilterRegex: '.*'
-ExcludeHeaderFilterRegex: '(/build/|/_deps/|/third_party|/vcpkg_installed/|^/opt/|^/usr/)'
+# Analyse only headers of this repository (core, qt/core, qt/desktop, tests).
+# clang-tidy matches this regex against the absolute path of each header.
+# CI replaces __REPO_ROOT__ with the workspace path before running.
+HeaderFilterRegex: '^__REPO_ROOT__/(core|qt/core|qt/desktop|qt/mobile|tests|benchmarks|examples)/.*\.(h|hpp|hxx)$'
+SystemHeaders: false
 
 # Formatting is clang-format's job.
 FormatStyle: none
