@@ -47,9 +47,6 @@ jobs:
           brew update
           brew install ccache
 
-          # spdlog dependencies
-          brew install spdlog
-
           # Exiv2 dependencies
           brew install inih
 
@@ -59,7 +56,7 @@ jobs:
           # OpenColorIO dependencies
           brew install pystring
 
-          brew list --versions spdlog ccache
+          brew list --versions ccache
 
     # ====================================================================
     # Setup Python and install Halide via pip
