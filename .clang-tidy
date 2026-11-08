@@ -29,7 +29,7 @@ Checks: >-
   -modernize-use-nodiscard,
   -modernize-use-trailing-return-type,
   -readability-identifier-length,
-  -readability-magic-numbers
+  -readability-magic-numbers,
 
   -cppcoreguidelines-avoid-non-const-global-variables,
   -cppcoreguidelines-avoid-const-or-ref-data-members,
@@ -65,8 +65,8 @@ WarningsAsErrors: ''
 
 # Analyse only headers of this repository (core, qt/core, qt/desktop, tests).
 # clang-tidy matches this regex against the absolute path of each header.
-# CI replaces __REPO_ROOT__ with the workspace path before running.
-HeaderFilterRegex: '^__REPO_ROOT__/(core|qt/core|qt/desktop|qt/mobile|tests|benchmarks|examples)/.*\.(h|hpp|hxx)$'
+HeaderFilterRegex: '/(core|qt/core|qt/desktop|qt/mobile|tests)/.*\.(h|hpp|hxx)$'
+ExcludeHeaderFilterRegex: '(_deps|third_party|OpenImageIO|fmt|spdlog)/'
 SystemHeaders: false
 
 # Formatting is clang-format's job.
