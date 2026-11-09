@@ -26,17 +26,7 @@ env:
   PR_WARNING_LIMIT: "0"
 
 jobs:
-  # GHCR requires a lowercase image name; the 'container:' key cannot do it.
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.img.outputs.ref }}
-    steps:
-      - id: img
-        run: echo "ref=ghcr.io/${GITHUB_REPOSITORY,,}/build-linux:ci" >> "$GITHUB_OUTPUT"
-
   clang-tidy:
-    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -92,6 +82,7 @@ jobs:
           cmake --preset debug-ninja \
             -DBUILD_DESKTOP_UI:BOOL=ON \
             -DBUILD_TESTS:BOOL=ON \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2;${HALIDE_PREFIX}"
 
       # ====================================================================
