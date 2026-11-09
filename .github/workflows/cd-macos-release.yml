@@ -166,39 +166,22 @@
           
         - name: Build Project
           run: cmake --build build/release-homebrew --config Release --parallel $(sysctl -n hw.ncpu)
-        
-        - name: Package App via macdeployqt
+        - name: Install and package bundle
           run: |
-           APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
+            cmake --install build/release-homebrew \
+              --prefix build/release-homebrew/install
 
-           if [ ! -d "$APP" ]; then
-             echo "::error::Bundle not found : $APP"
-             find build/release-homebrew -name "*.app"
-             exit 1
-           fi
-
-           macdeployqt "$APP" \
-           -qmldir=qt/desktop/qml \
-           -verbose=2
-
-        - name: Copy third-party dylibs into bundle
-          run: |
-           APP="build/release-homebrew/qt/desktop/CaptureMoment.app"
-           FW="$APP/Contents/Frameworks"
-
-           cp -L ${HALIDE_PREFIX}/lib/libHalide.dylib "$FW/"
-           cp -a ${{ env.INSTALL_PREFIX }}/oiio/lib/libOpenImageIO*.dylib "$FW/"
-           cp -a ${{ env.INSTALL_PREFIX }}/exiv2/lib/libexiv2*.dylib "$FW/"
-
-           strip -x "$FW/libHalide.dylib"
-
-           ls -lh "$FW"
-          shell: bash
+            APP="build/release-homebrew/install/CaptureMoment.app"
+            if [ ! -d "$APP" ]; then
+              echo "::error::Bundle not found at $APP"
+              find build/release-homebrew -name "*.app" || true
+              exit 1
+            fi
 
         - name: Package DMG via hdiutil
           run: |
            hdiutil create -volname CaptureMoment \
-            -srcfolder "build/release-homebrew/qt/desktop/CaptureMoment.app" \
+            -srcfolder "build/release-homebrew/install/CaptureMoment.app" \
             -ov -format UDZO "build/release-homebrew/CaptureMoment.dmg"
 
         - name: Upload installer artifact (always, for manual test runs)
