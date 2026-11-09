@@ -1,0 +1,189 @@
+# =============================================================================
+# CaptureMoment - clang-tidy configuration
+# Target: C++23
+#
+# Static analysis: reports bugs, style violations and modernization
+# opportunities without running the code.
+# =============================================================================
+Checks: >-
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  concurrency-*,
+  cppcoreguidelines-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -misc-include-cleaner,
+  -misc-no-recursion,
+  -misc-non-private-member-variables-in-classes,
+  -modernize-use-nodiscard,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -readability-convert-member-functions-to-static,
+
+# Explanations of the DISABLED checks (Qt conflicts / noise):
+#   -bugprone-easily-swappable-parameters       "void draw(int w, int h)" is fine.
+#   -cppcoreguidelines-*-magic-numbers          Literals like 3 in loops are fine.
+#   -cppcoreguidelines-macro-usage              Qt needs macros (Q_OBJECT, signals).
+#   -cppcoreguidelines-owning-memory            gsl::owner<> not used in this codebase.
+#   -cppcoreguidelines-pro-bounds-*             Image code walks raw pixel buffers.
+#   -cppcoreguidelines-non-private-member-...   POD-style structs expose members.
+#   -misc-include-cleaner                       Re-shuffles #includes on every edit.
+#   -misc-no-recursion                          Recursion is legitimate in image code.
+#   -modernize-use-nodiscard                    Would touch hundreds of functions.
+#   -modernize-use-trailing-return-type         We keep "int f()", not "auto f() -> int".
+#   -readability-identifier-length              "int i" loop counters are fine.
+#
+# Enabled families, in one line each:
+#   bugprone-*, clang-analyzer-*   Likely bugs, leaks, use-after-free.
+#   concurrency-*                  Threading issues.
+#   cppcoreguidelines-*            Core Guidelines rules.
+#   misc-*                         Suspicious constructs.
+#   modernize-*                    typedef -> using, NULL -> nullptr, range-for.
+#   performance-*                  Unnecessary copies: "for (auto s : v)" -> "&".
+#   portability-*                  32/64-bit assumptions.
+#   readability-*                  Naming, complexity, braces.
+
+# CI counts warnings against a ceiling; not errors here.
+WarningsAsErrors: ''
+
+# Analyse only headers of this repository (core, qt/core, qt/desktop, tests).
+# clang-tidy matches this regex against the absolute path of each header.
+HeaderFilterRegex: '/(core|qt/core|qt/desktop|qt/mobile|tests)/.*\.(h|hpp|hxx)$'
+ExcludeHeaderFilterRegex: '(_deps|third_party|OpenImageIO|fmt|spdlog)/'
+SystemHeaders: false
+
+# Formatting is clang-format's job.
+FormatStyle: none
+
+CheckOptions:
+  # --- Complexity ------------------------------------------------------------
+  # Cognitive complexity / function size limits.
+  - key: readability-function-cognitive-complexity.Threshold
+    value: '25'
+  - key: readability-function-size.LineThreshold
+    value: '120'
+  - key: readability-function-size.StatementThreshold
+    value: '80'
+  - key: readability-function-size.BranchThreshold
+    value: '15'
+
+  # --- Style -----------------------------------------------------------------
+  # Braces required around any if/for body:  if (ok) { return; }
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: '0'
+
+  # Pointer truthiness is fine: if (image) {...}. Int truthiness is not.
+  - key: readability-implicit-bool-conversion.AllowPointerConditions
+    value: 'true'
+
+  # Prefer empty() over size() == 0, including Qt containers.
+  - key: readability-container-size-empty.Loose
+    value: 'true'
+
+  # --- Class design ----------------------------------------------------------
+  # Rule of five relaxations for simple Qt-compatible classes.
+  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value: 'true'
+  - key: cppcoreguidelines-special-member-functions.AllowMissingMoveFunctionsWhenCopyIsDeleted
+    value: 'true'
+
+  # --- Performance -----------------------------------------------------------
+  # Warn on copying loop variables:  for (auto frame : frames) -> const auto&.
+  - key: performance-for-range-copy.WarnOnAllAutoCopies
+    value: 'true'
+
+  # Implicitly shared Qt types are cheap by value; do not warn for them.
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: 'QString;QByteArray;QVariant;QUrl'
+
+  # --- Modernize -------------------------------------------------------------
+  # Suggest "auto" only for long type names.
+  - key: modernize-use-auto.MinTypeNameLength
+    value: '5'
+
+  # Suggest range-for over index loops when safe.
+  - key: modernize-loop-convert.MinConfidence
+    value: 'reasonable'
+
+  # =============================================================================
+  # Naming conventions.
+  # =============================================================================
+  # Functions / methods: loadImage(), isValide().
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.MethodCase
+    value: camelBack
+  # Do not rename main().
+  - key: readability-identifier-naming.IgnoreMainLikeFunctions
+    value: 'true'
+
+  # Local variables / parameters: pixel_count, new_width.
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+
+  # Private / protected members: m_pixel_count.
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: 'm_'
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ProtectedMemberPrefix
+    value: 'm_'
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: lower_case
+
+  # Public struct members: struct Rect { int x; };
+  - key: readability-identifier-naming.PublicMemberCase
+    value: lower_case
+
+  # Types: class ImageCache, struct Rect, enum class ColorMode.
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+
+  # Namespaces: namespace capture.
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+
+  # Aliases: using ImagePtr = ...;
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+
+  # Enum values: ColorMode { Raw, Preview }.
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+
+  # Mutable globals: int g_cache_generation;
+  - key: readability-identifier-naming.GlobalVariablePrefix
+    value: 'g_'
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: lower_case
+
+  # Constants: k_Max_Image_Size (k_ prefix + Camel_Snake_Case).
+  - key: readability-identifier-naming.ConstexprVariablePrefix
+    value: 'k_'
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: Camel_Snake_Case

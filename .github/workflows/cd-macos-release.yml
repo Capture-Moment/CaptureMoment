@@ -37,9 +37,6 @@
           run: |
             brew update
 
-            # spdlog dependencies
-            brew install spdlog
-
             # Exiv2 dependencies
             brew install inih
 
@@ -48,8 +45,6 @@
 
             # OpenColorIO dependencies
             brew install pystring
-
-            brew list --versions spdlog
 
       # ====================================================================
       # Setup Python and install Halide via pip

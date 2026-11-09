@@ -51,27 +51,31 @@ endfunction()
 
 
 # ============================================================
-# Find spdlog
+# Find spdlog (header-only, via CPM)
 # ============================================================
 function(find_spdlog_package)
 
-    message(STATUS "Searching for spdlog...")
+    message(STATUS "Fetching spdlog v1.17.0 (header-only) via CPM")
 
-    # Attempt CONFIG (vcpkg, Conan)
-    find_package(spdlog CONFIG QUIET)
+    CPMAddPackage(
+        NAME spdlog
+        GITHUB_REPOSITORY gabime/spdlog
+        GIT_TAG v1.17.0
+        OPTIONS
+            "SPDLOG_BUILD_EXAMPLE OFF"
+            "SPDLOG_BUILD_TESTS OFF"
+            "SPDLOG_BUILD_BENCH OFF"
+            "SPDLOG_INSTALL OFF"
+            "SPDLOG_FMT_EXTERNAL OFF"
+            "SPDLOG_USE_STD_FORMAT ON"
+    )
 
-    if(NOT spdlog_FOUND)
-        message(STATUS "spdlog not found via CONFIG, trying MODULE...")
-        # Attempt MODULE (Findspdlog.cmake)
-        find_package(spdlog MODULE QUIET)
+    if(NOT TARGET spdlog::spdlog_header_only)
+        message(FATAL_ERROR "spdlog::spdlog_header_only target not found after CPMAddPackage.")
     endif()
-    
-    if(spdlog_FOUND)
-        set(spdlog_FOUND TRUE PARENT_SCOPE)
-        set(spdlog_VERSION ${spdlog_VERSION} PARENT_SCOPE)
-    else()
-        message(FATAL_ERROR "spdlog not found. Please install it via your package manager or vcpkg/conan.")
-    endif()
+
+    set(spdlog_FOUND TRUE PARENT_SCOPE)
+    set(spdlog_VERSION "1.17.0" PARENT_SCOPE)
 endfunction()
 
 # ============================================================
