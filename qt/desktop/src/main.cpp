@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
         app.processEvents();
 
         // Setup QML context once
-        auto context = engine.rootContext();
+        auto context { engine.rootContext() };
         if (!CaptureMoment::UI::QmlContextSetup::setupContext(context)) {
             spdlog::error("Failed to setup QML context");
             return -1;

@@ -114,45 +114,47 @@ function(find_halide_package)
 
     message(STATUS "Searching for Halide...")
 
-    # Explicit override wins (exported by the setup scripts / CI)
-    if(DEFINED ENV{HALIDE_PREFIX})
-        list(APPEND CMAKE_PREFIX_PATH "$ENV{HALIDE_PREFIX}")
-    endif()
+    find_package(Halide 22.1 CONFIG QUIET)
 
-    # Ask the virtualenv's Python where the wheel installed Halide.
-    # Covers both the project-local .venv and any activated virtualenv.
-    foreach(_venv "${CMAKE_SOURCE_DIR}/.venv" "$ENV{VIRTUAL_ENV}")
-        if(EXISTS "${_venv}/bin/python")
+    # Not found? Try installing the pinned wheel into the project venv.
+    if(NOT Halide_FOUND)
+        set(_halide_version "22.1.0")
+
+        # Locate or create the project-local venv
+        if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
+            message(STATUS "Halide: creating project virtualenv (.venv)...")
             execute_process(
-                COMMAND "${_venv}/bin/python" -c "import halide; print(halide.install_dir())"
+                COMMAND python3 -m venv "${CMAKE_SOURCE_DIR}/.venv"
+                RESULT_VARIABLE _venv_rc)
+        endif()
+
+        if(EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
+            message(STATUS "Halide not found — installing halide==${_halide_version} into .venv...")
+            execute_process(
+                COMMAND "${CMAKE_SOURCE_DIR}/.venv/bin/pip" install "halide==${_halide_version}"
+                RESULT_VARIABLE _pip_rc)
+        endif()
+
+        if(_pip_rc EQUAL 0)
+            # Re-run the venv query from the contributor's code, then retry find_package
+            execute_process(
+                COMMAND "${CMAKE_SOURCE_DIR}/.venv/bin/python" -c "import halide; print(halide.install_dir())"
                 OUTPUT_VARIABLE _halide_dir
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 ERROR_QUIET
-                RESULT_VARIABLE _halide_query
-            )
+                RESULT_VARIABLE _halide_query)
             if(_halide_query EQUAL 0 AND EXISTS "${_halide_dir}")
                 list(APPEND CMAKE_PREFIX_PATH "${_halide_dir}")
+                find_package(Halide 22.1 CONFIG QUIET)
             endif()
         endif()
-    endforeach()
-
-    find_package(Halide 22.1 CONFIG QUIET)
+    endif()
 
     if(NOT Halide_FOUND)
         message(FATAL_ERROR
-            "Halide 22.1+ not found.\n"
-            "Install the wheel into the project virtualenv "
-            "(python -m venv .venv && .venv/bin/pip install halide==22.1.0), "
-            "or set HALIDE_PREFIX to an existing install.\n"
-            "See the installation guide:\n"
-            "https://capture-moment.github.io/docs/")
+            "Halide 22.1+ could not be installed automatically.\n"
+            "Check your network connection, or set HALIDE_PREFIX to an existing install.")
     endif()
-
-    message(STATUS "Halide found: version ${Halide_VERSION}")
-
-    set(Halide_FOUND TRUE PARENT_SCOPE)
-    set(Halide_VERSION ${Halide_VERSION} PARENT_SCOPE)
-
 endfunction()
 
 # ============================================================
