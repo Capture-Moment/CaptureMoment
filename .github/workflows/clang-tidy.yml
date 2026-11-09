@@ -83,7 +83,7 @@ jobs:
       # Configure + build (generates moc / rcc / qml sources that
       # clang-tidy needs in order to parse the project)
       # ====================================================================
-      - name: Configure
+      - name: Configure (compile_commands.json only)
         env:
           CC: clang-${{ env.CLANG_VERSION }}
           CXX: clang++-${{ env.CLANG_VERSION }}
@@ -92,12 +92,8 @@ jobs:
           cmake --preset debug-ninja \
             -DBUILD_DESKTOP_UI:BOOL=ON \
             -DBUILD_TESTS:BOOL=ON \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_FLAGS="--gcc-toolchain=/usr/local" \
+            -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
             -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2;${HALIDE_PREFIX}"
-
-      - name: Build (generated sources)
-        run: cmake --build "${BUILD_DIR}" --parallel "$(nproc)"
 
       # ====================================================================
       # Select files: PR -> changed .cpp files; push -> everything.
