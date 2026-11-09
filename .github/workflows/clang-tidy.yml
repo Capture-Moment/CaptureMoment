@@ -28,7 +28,7 @@ env:
 jobs:
   clang-tidy:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: read
