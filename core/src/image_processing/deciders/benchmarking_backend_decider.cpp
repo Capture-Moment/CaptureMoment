@@ -7,7 +7,7 @@
  */
 
 #include "image_processing/deciders/benchmarking_backend_decider.h"
-#include "image_processing/helpers/gpu_features.h"
+#include "image_processing/helper/gpu_features.h"
 
 #include <spdlog/spdlog.h>
 #include "Halide.h"
@@ -280,11 +280,12 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         if (!try_compile_jit(pipeline, target))
         {
             spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - JIT compilation failed (not supported by Halide build)",
-                          Halide::Target::feature_to_name(features));
+                          Halide::Target::feature_to_name(feature
+                        ));
             return std::nullopt;
         }
 
-        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - JIT compilation successful", Halide::Target::feature_to_name(features));
+        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - JIT compilation successful", Halide::Target::feature_to_name(feature));
 
         // Step 4: Copy to device
         // The buffer is fresh, so no interface conflict can occur
@@ -293,7 +294,7 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         if (copy_res != 0)
         {
             spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - copy_to_device failed (err: {}), no GPU device available",
-                          Halide::Target::feature_to_name(features), copy_res);
+                          Halide::Target::feature_to_name(feature), copy_res);
             return std::nullopt;
         }
 
@@ -308,7 +309,7 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         }
         catch (const Halide::Error& e)
         {
-            spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - realize failed: {}", Halide::Target::feature_to_name(features), e.what());
+            spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - realize failed: {}", Halide::Target::feature_to_name(feature), e.what());
             return std::nullopt;
         }
 
@@ -316,22 +317,22 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
 
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         spdlog::info("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} benchmark success: {} ms",
-                     Halide::Target::feature_to_name(features), duration.count());
+                     Halide::Target::feature_to_name(feature), duration.count());
         return duration;
     }
     catch (const Halide::Error& e)
     {
-        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} Halide error: {}", Halide::Target::feature_to_name(features), e.what());
+        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} Halide error: {}", Halide::Target::feature_to_name(feature), e.what());
         return std::nullopt;
     }
     catch (const std::exception& e)
     {
-        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} exception: {}", Halide::Target::feature_to_name(features), e.what());
+        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} exception: {}", Halide::Target::feature_to_name(feature), e.what());
         return std::nullopt;
     }
     catch (...)
     {
-        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - unknown exception prevented", Halide::Target::feature_to_name(features));
+        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - unknown exception prevented", Halide::Target::feature_to_name(feature));
         return std::nullopt;
     }
 }
