@@ -111,3 +111,12 @@
  * Must be called once at application startup.
  */
 #include "image_processing/registration/working_image_registration.h"
+
+// ============================================================
+// 7. Helper
+// ============================================================
+
+/**
+ * @brief Provides compile-time GPU backend availability per platform.
+ */
+#include "image_processing/helper/gpu_features.h"

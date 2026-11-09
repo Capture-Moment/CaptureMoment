@@ -51,27 +51,31 @@ endfunction()
 
 
 # ============================================================
-# Find spdlog
+# Find spdlog (header-only, via CPM)
 # ============================================================
 function(find_spdlog_package)
 
-    message(STATUS "Searching for spdlog...")
+    message(STATUS "Fetching spdlog v1.17.0 (header-only) via CPM")
 
-    # Attempt CONFIG (vcpkg, Conan)
-    find_package(spdlog CONFIG QUIET)
+    CPMAddPackage(
+        NAME spdlog
+        GITHUB_REPOSITORY gabime/spdlog
+        GIT_TAG v1.17.0
+        OPTIONS
+            "SPDLOG_BUILD_EXAMPLE OFF"
+            "SPDLOG_BUILD_TESTS OFF"
+            "SPDLOG_BUILD_BENCH OFF"
+            "SPDLOG_INSTALL OFF"
+            "SPDLOG_FMT_EXTERNAL OFF"
+            "SPDLOG_USE_STD_FORMAT ON"
+    )
 
-    if(NOT spdlog_FOUND)
-        message(STATUS "spdlog not found via CONFIG, trying MODULE...")
-        # Attempt MODULE (Findspdlog.cmake)
-        find_package(spdlog MODULE QUIET)
+    if(NOT TARGET spdlog::spdlog_header_only)
+        message(FATAL_ERROR "spdlog::spdlog_header_only target not found after CPMAddPackage.")
     endif()
-    
-    if(spdlog_FOUND)
-        set(spdlog_FOUND TRUE PARENT_SCOPE)
-        set(spdlog_VERSION ${spdlog_VERSION} PARENT_SCOPE)
-    else()
-        message(FATAL_ERROR "spdlog not found. Please install it via your package manager or vcpkg/conan.")
-    endif()
+
+    set(spdlog_FOUND TRUE PARENT_SCOPE)
+    set(spdlog_VERSION "1.17.0" PARENT_SCOPE)
 endfunction()
 
 # ============================================================
@@ -110,45 +114,47 @@ function(find_halide_package)
 
     message(STATUS "Searching for Halide...")
 
-    # Explicit override wins (exported by the setup scripts / CI)
-    if(DEFINED ENV{HALIDE_PREFIX})
-        list(APPEND CMAKE_PREFIX_PATH "$ENV{HALIDE_PREFIX}")
-    endif()
+    find_package(Halide 22.1 CONFIG QUIET)
 
-    # Ask the virtualenv's Python where the wheel installed Halide.
-    # Covers both the project-local .venv and any activated virtualenv.
-    foreach(_venv "${CMAKE_SOURCE_DIR}/.venv" "$ENV{VIRTUAL_ENV}")
-        if(EXISTS "${_venv}/bin/python")
+    # Not found? Try installing the pinned wheel into the project venv.
+    if(NOT Halide_FOUND)
+        set(_halide_version "22.1.0")
+
+        # Locate or create the project-local venv
+        if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
+            message(STATUS "Halide: creating project virtualenv (.venv)...")
             execute_process(
-                COMMAND "${_venv}/bin/python" -c "import halide; print(halide.install_dir())"
+                COMMAND python3 -m venv "${CMAKE_SOURCE_DIR}/.venv"
+                RESULT_VARIABLE _venv_rc)
+        endif()
+
+        if(EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
+            message(STATUS "Halide not found — installing halide==${_halide_version} into .venv...")
+            execute_process(
+                COMMAND "${CMAKE_SOURCE_DIR}/.venv/bin/pip" install "halide==${_halide_version}"
+                RESULT_VARIABLE _pip_rc)
+        endif()
+
+        if(_pip_rc EQUAL 0)
+            # Re-run the venv query from the contributor's code, then retry find_package
+            execute_process(
+                COMMAND "${CMAKE_SOURCE_DIR}/.venv/bin/python" -c "import halide; print(halide.install_dir())"
                 OUTPUT_VARIABLE _halide_dir
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 ERROR_QUIET
-                RESULT_VARIABLE _halide_query
-            )
+                RESULT_VARIABLE _halide_query)
             if(_halide_query EQUAL 0 AND EXISTS "${_halide_dir}")
                 list(APPEND CMAKE_PREFIX_PATH "${_halide_dir}")
+                find_package(Halide 22.1 CONFIG QUIET)
             endif()
         endif()
-    endforeach()
-
-    find_package(Halide 22.1 CONFIG QUIET)
+    endif()
 
     if(NOT Halide_FOUND)
         message(FATAL_ERROR
-            "Halide 22.1+ not found.\n"
-            "Install the wheel into the project virtualenv "
-            "(python -m venv .venv && .venv/bin/pip install halide==22.1.0), "
-            "or set HALIDE_PREFIX to an existing install.\n"
-            "See the installation guide:\n"
-            "https://capture-moment.github.io/docs/")
+            "Halide 22.1+ could not be installed automatically.\n"
+            "Check your network connection, or set HALIDE_PREFIX to an existing install.")
     endif()
-
-    message(STATUS "Halide found: version ${Halide_VERSION}")
-
-    set(Halide_FOUND TRUE PARENT_SCOPE)
-    set(Halide_VERSION ${Halide_VERSION} PARENT_SCOPE)
-
 endfunction()
 
 # ============================================================

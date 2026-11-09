@@ -7,34 +7,18 @@
  */
 
 #include "image_processing/deciders/benchmarking_backend_decider.h"
+#include "image_processing/helper/gpu_features.h"
+
 #include <spdlog/spdlog.h>
 #include "Halide.h"
+
 #include <array>
 #include <string>
+#include <chrono>
+#include <optional>
+#include <utility>
 
 namespace CaptureMoment::Core::ImageProcessing {
-
-// ============================================================
-// Helper Functions
-// ============================================================
-
-/**
- * @brief Converts a Halide Target::Feature to a human-readable string.
- * @param feature The Halide feature enum value.
- * @return String representation of the feature name.
- */
-static std::string feature_to_string(Halide::Target::Feature feature)
-{
-    switch (feature)
-    {
-    case Halide::Target::CUDA: return "CUDA";
-    case Halide::Target::OpenCL: return "OpenCL";
-    case Halide::Target::Vulkan: return "Vulkan";
-    case Halide::Target::Metal: return "Metal";
-    case Halide::Target::D3D12Compute: return "DirectX12";
-    default: return "Unknown";
-    }
-}
 
 /**
  * @brief Checks if a GPU feature should be tested on the current platform.
@@ -46,30 +30,28 @@ static bool should_test_feature(Halide::Target::Feature feature)
     switch (feature)
     {
     case Halide::Target::Metal:
-#ifdef __APPLE__
+        if constexpr (!k_has_metal)
+        {
+            spdlog::debug("[BackendDecider] Metal skipped - not available on this platform");
+            return false;
+        }
         return true;
-#else
-        spdlog::debug("[BackendDecider] Metal skipped - not available on this platform");
-        return false;
-#endif
 
     case Halide::Target::D3D12Compute:
-#ifdef _WIN32
+        if constexpr (!k_has_d3d12)
+        {
+            spdlog::debug("[BackendDecider] DirectX12 skipped - not available on this platform");
+            return false;
+        }
         return true;
-#else
-        spdlog::debug("[BackendDecider] DirectX12 skipped - not available on this platform");
-        return false;
-#endif
 
     case Halide::Target::CUDA:
-#ifdef __APPLE__
-        // Apple dropped CUDA driver support after macOS 10.13; testing it only
-        // wastes a JIT compilation.
-        spdlog::debug("[BackendDecider] CUDA skipped - not available on this platform");
-        return false;
-#else
+        if constexpr (!k_has_cuda)
+        {
+            spdlog::debug("[BackendDecider] CUDA skipped - not available on this platform");
+            return false;
+        }
         return true;
-#endif
 
     case Halide::Target::OpenCL:
     case Halide::Target::Vulkan:
@@ -298,11 +280,12 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         if (!try_compile_jit(pipeline, target))
         {
             spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - JIT compilation failed (not supported by Halide build)",
-                          feature_to_string(feature));
+                          Halide::Target::feature_to_name(feature
+                        ));
             return std::nullopt;
         }
 
-        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - JIT compilation successful", feature_to_string(feature));
+        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - JIT compilation successful", Halide::Target::feature_to_name(feature));
 
         // Step 4: Copy to device
         // The buffer is fresh, so no interface conflict can occur
@@ -311,7 +294,7 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         if (copy_res != 0)
         {
             spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - copy_to_device failed (err: {}), no GPU device available",
-                          feature_to_string(feature), copy_res);
+                          Halide::Target::feature_to_name(feature), copy_res);
             return std::nullopt;
         }
 
@@ -326,7 +309,7 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         }
         catch (const Halide::Error& e)
         {
-            spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - realize failed: {}", feature_to_string(feature), e.what());
+            spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - realize failed: {}", Halide::Target::feature_to_name(feature), e.what());
             return std::nullopt;
         }
 
@@ -334,22 +317,22 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
 
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         spdlog::info("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} benchmark success: {} ms",
-                     feature_to_string(feature), duration.count());
+                     Halide::Target::feature_to_name(feature), duration.count());
         return duration;
     }
     catch (const Halide::Error& e)
     {
-        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} Halide error: {}", feature_to_string(feature), e.what());
+        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} Halide error: {}", Halide::Target::feature_to_name(feature), e.what());
         return std::nullopt;
     }
     catch (const std::exception& e)
     {
-        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} exception: {}", feature_to_string(feature), e.what());
+        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} exception: {}", Halide::Target::feature_to_name(feature), e.what());
         return std::nullopt;
     }
     catch (...)
     {
-        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - unknown exception prevented", feature_to_string(feature));
+        spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - unknown exception prevented", Halide::Target::feature_to_name(feature));
         return std::nullopt;
     }
 }
