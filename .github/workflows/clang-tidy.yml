@@ -72,7 +72,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends \
             wget gnupg lsb-release ca-certificates \
-            jq ccache
+            jq
           wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh
           bash /tmp/llvm.sh "${CLANG_VERSION}"
           apt-get install -y --no-install-recommends \
@@ -92,7 +92,6 @@ jobs:
           cmake --preset debug-ninja \
             -DBUILD_DESKTOP_UI:BOOL=ON \
             -DBUILD_TESTS:BOOL=ON \
-            -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
             -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2;${HALIDE_PREFIX}"
 
       # ====================================================================
