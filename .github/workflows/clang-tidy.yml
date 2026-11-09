@@ -34,7 +34,7 @@ jobs:
       packages: read
 
     container:
-      image: ${{ needs.prepare.outputs.image }}
+      image: ghcr.io/${{ github.repository }}/build-linux:ci
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
