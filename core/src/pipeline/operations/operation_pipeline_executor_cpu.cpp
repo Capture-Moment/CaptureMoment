@@ -34,7 +34,7 @@ void ensureAdamsPluginLoaded()
 
 } // namespace
 
-void OperationPipelineExecutorCPU::buildOperationChain()
+void OperationPipelineExecutorCPU::buildOperationChain(const Common::ImageDim width, const Common::ImageDim height)
 {
     ensureAdamsPluginLoaded();
 
@@ -53,8 +53,8 @@ void OperationPipelineExecutorCPU::buildOperationChain()
 
     // Adams2019 estimates (input and output). Using the dimensions of the
     // currently loaded image: exact by construction.
-    const int w { m_image_width };
-    const int h { m_image_height };
+    const int w { width };
+    const int h { height };
     m_input.set_estimates({{0, w}, {0, h}, {0, 4}});
     final_output.output_buffer().set_estimates({{0, w}, {0, h}, {0, 4}});
 
@@ -112,7 +112,7 @@ bool OperationPipelineExecutorCPU::execute(ImageProcessing::IWorkingImageHardwar
     return executeOnHalideBuffer(cpu_impl->getOriginalHalideBuffer(), cpu_impl->getHalideBuffer());
 }
 
-bool OperationPipelineExecutor::executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer)
+bool OperationPipelineExecutorCPU::executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer)
 {
     if (!m_chain_built || !m_pipeline.defined()) {
         return true;
@@ -122,22 +122,19 @@ bool OperationPipelineExecutor::executeOnHalideBuffer(Halide::Buffer<float>& inp
         // 1. Bind the actual C++ buffer memory to the Halide ImageParam
         // This is extremely fast (pointer copy), no data duplication.
         m_input.set(input_buffer);
-        // 2. Get the target for execution
-        Halide::Target target { Config::AppConfig::getHalideTarget() };
 
-        spdlog::debug("[OperationPipelineExecutor::executeOnHalideBuffer]: Halide Target Architecture: {}",
-                     target.to_string());
-
-        // 3. Execute the pipeline on the correct device
+        // 2. Execute the pipeline on the correct device
         m_pipeline.realize(output_buffer);
+
+        spdlog::debug("[OperationPipelineExecutorCPU::executeOnHalideBuffer]: Pipeline executed successfully.");
         return true;
     }
     catch (const Halide::RuntimeError& e) {
-        spdlog::critical("[OperationPipelineExecutor::executeOnHalideBuffer]: Halide Runtime Error: {}", e.what());
+        spdlog::critical("[OperationPipelineExecutorCPU::executeOnHalideBuffer]: Halide Runtime Error: {}", e.what());
         return false;
     }
     catch (const std::exception& e) {
-        spdlog::critical("[OperationPipelineExecutor::executeOnHalideBuffer]: Unexpected exception: {}", e.what());
+        spdlog::critical("[OperationPipelineExecutorCPU::executeOnHalideBuffer]: Unexpected exception: {}", e.what());
         return false;
     }
 }

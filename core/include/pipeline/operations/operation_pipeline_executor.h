@@ -68,7 +68,6 @@ public:
      * @details
      * This method is the main entry point for building and compiling a new Halide pipeline.
      * It takes ownership of the operations vector (Move Semantics) and stores it in `m_operations`.
-     * It then calls `buildOperationChain()` to construct the Halide graph and `applyScheduling()`
      * to optimize it, before finally compiling it into `m_pipeline`.
      *
      * @param operations The list of operation descriptors.
@@ -98,16 +97,6 @@ public:
     void updateRuntimeParams(std::vector<Operations::OperationDescriptor>&& operations);
 
 protected: 
-     /**
-     * @brief Applies scheduling directives (Vectorization/Parallelism/GPU tiling).
-     * @details  Called during the build phase to optimize `output_func`
-     * @param pipeline 
-     * @param x 
-     * @param y
-     * @param c
-     */
-    virtual void applyScheduling(Halide::Func& pipeline, Halide::Var& x, Halide::Var& y, Halide::Var& c) const = 0;
-    
     /**
      * @brief Applies all operations to the input function.
      * @details  Chains the operations together to form a complete Halide function graph.

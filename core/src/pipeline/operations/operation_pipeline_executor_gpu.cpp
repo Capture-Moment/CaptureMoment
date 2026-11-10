@@ -35,7 +35,6 @@ void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim wi
     final_rgb_output.output_buffer().dim(2).set_stride(1);
 
     Halide::Target target { Config::AppConfig::getHalideTarget() };
-    applyScheduling(final_rgb_output, x, y, c);
 
     try {
         final_rgb_output.compile_jit(target);
@@ -46,13 +45,6 @@ void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim wi
         spdlog::critical("[OperationPipelineExecutorGPU::buildOperationChain]: {}", e.what());
         m_chain_built = false;
     }*/
-}
-
-void OperationPipelineExecutorGPU::applyScheduling(Halide::Func& pipeline, Halide::Var& x, Halide::Var& y, Halide::Var &c) const
-{
-    Halide::Var xo, yo, xi, yi;
-    pipeline.gpu_tile(x, y, xo, yo, xi, yi, 16, 16);
-    spdlog::trace("[OperationPipelineExecutorGPU::applyScheduling]: Applying GPU scheduling.");
 }
 
 bool OperationPipelineExecutorGPU::execute(ImageProcessing::IWorkingImageHardware& working_image)
@@ -67,7 +59,7 @@ bool OperationPipelineExecutorGPU::execute(ImageProcessing::IWorkingImageHardwar
     return executeOnHalideBuffer(gpu_impl->getOriginalHalideBuffer(), gpu_impl->getHalideBuffer());
 }
 
-bool OperationPipelineExecutor::executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer)
+bool OperationPipelineExecutorGPU::executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer)
 {
     if (!m_chain_built || !m_pipeline.defined()) {
         return true;
@@ -81,7 +73,7 @@ bool OperationPipelineExecutor::executeOnHalideBuffer(Halide::Buffer<float>& inp
         // CRITICAL: For GPU execution, realize() MUST receive the target parameter
         Halide::Target target { Config::AppConfig::getHalideTarget() };
 
-        spdlog::debug("[OperationPipelineExecutor::executeOnHalideBuffer]: Halide Target Architecture: {}",
+        spdlog::debug("[OperationPipelineExecutorGPU::executeOnHalideBuffer]: Halide Target Architecture: {}",
                      target.to_string());
 
         // 3. Execute the pipeline on the correct device (CPU or GPU)
@@ -89,11 +81,11 @@ bool OperationPipelineExecutor::executeOnHalideBuffer(Halide::Buffer<float>& inp
         return true;
     }
     catch (const Halide::RuntimeError& e) {
-        spdlog::critical("[OperationPipelineExecutor::executeOnHalideBuffer]: Halide Runtime Error: {}", e.what());
+        spdlog::critical("[OperationPipelineExecutorGPU::executeOnHalideBuffer]: Halide Runtime Error: {}", e.what());
         return false;
     }
     catch (const std::exception& e) {
-        spdlog::critical("[OperationPipelineExecutor::executeOnHalideBuffer]: Unexpected exception: {}", e.what());
+        spdlog::critical("[OperationPipelineExecutorGPU::executeOnHalideBuffer]: Unexpected exception: {}", e.what());
         return false;
     }
 }
