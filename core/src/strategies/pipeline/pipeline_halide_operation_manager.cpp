@@ -38,7 +38,7 @@ PipelineHalideOperationManager::PipelineHalideOperationManager()
     m_executor.reset(concrete_ptr);
 }
 
-void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescriptor>&& operations)
+void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescriptor>&& operations, const Common::ImageDim width, const Common::ImageDim height)
 {
     // 1. Detect structural changes (type, name, enabled) vs value changes (params)
     bool structure_changed { true };
@@ -76,7 +76,7 @@ void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescr
     if (structure_changed) {
         spdlog::info("[PipelineHalideOperationManager::init]: Structure changed. Recompiling pipeline.");
         // If the structure changed, we need to recompile the pipeline, which is more expensive. We call init() which will rebuild the graph and recompile.
-        m_executor->init(std::move(operations), *m_operation_factory);
+        m_executor->init(std::move(operations), *m_operation_factory, width, height);
     } else {
         spdlog::trace("[PipelineHalideOperationManager::init]: Values only. Updating runtime params.");
         // If only values changed, we can skip recompilation and just update the parameters in the existing pipeline. This is the fast path.

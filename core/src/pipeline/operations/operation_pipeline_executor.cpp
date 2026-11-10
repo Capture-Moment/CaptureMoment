@@ -29,7 +29,10 @@ OperationPipelineExecutor::OperationPipelineExecutor()
 
 void OperationPipelineExecutor::init(
     std::vector<Operations::OperationDescriptor>&& operations,
-    const Operations::OperationFactory& factory)
+    const Operations::OperationFactory& factory,
+    const Common::ImageDim width,
+    const Common::ImageDim height
+)
 {
     spdlog::debug("[OperationPipelineExecutor::init (Move)]: Initializing with {} operations.", operations.size());
 
@@ -37,7 +40,7 @@ void OperationPipelineExecutor::init(
     m_factory = &factory;
 
     if (!m_operations.empty()) {
-        buildOperationChain();
+        buildOperationChain(width, height);
     } else {
         m_chain_built = false;
         m_pipeline = Halide::Pipeline();
@@ -96,44 +99,16 @@ Halide::Func OperationPipelineExecutor::applyOperations(const Halide::Func& inpu
         if (fusion_logic)
         {
             auto& param_ref { m_pipeline_params[desc.id] };
-            if (auto val_res = desc.getParam<float>("value")) {
+            if (auto val_res = desc.getParam<float>("value"))
+            {
                 param_ref.set(val_res.value());
+                param_ref.set_estimate(val_res.value());
+
             }
             current_stage = fusion_logic->appendToFusedPipeline(current_stage, x, y, c, param_ref);
         }
     }
     return current_stage;
-}
-
-bool OperationPipelineExecutor::executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer)
-{
-    if (!m_chain_built || !m_pipeline.defined()) {
-        return true;
-    }
-
-    try {
-        // 1. Bind the actual C++ buffer memory to the Halide ImageParam
-        // This is extremely fast (pointer copy), no data duplication.
-        m_input.set(input_buffer);
-        // 2. Get the target for execution
-        // CRITICAL: For GPU execution, realize() MUST receive the target parameter
-        Halide::Target target { Config::AppConfig::getHalideTarget() };
-
-        spdlog::debug("[OperationPipelineExecutor::executeOnHalideBuffer]: Halide Target Architecture: {}",
-                     target.to_string());
-
-        // 3. Execute the pipeline on the correct device (CPU or GPU)
-        m_pipeline.realize(output_buffer, target);
-        return true;
-    }
-    catch (const Halide::RuntimeError& e) {
-        spdlog::critical("[OperationPipelineExecutor::executeOnHalideBuffer]: Halide Runtime Error: {}", e.what());
-        return false;
-    }
-    catch (const std::exception& e) {
-        spdlog::critical("[OperationPipelineExecutor::executeOnHalideBuffer]: Unexpected exception: {}", e.what());
-        return false;
-    }
 }
 
 } // namespace CaptureMoment::Core::Pipeline
