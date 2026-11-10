@@ -15,6 +15,7 @@
 #include "pipeline/operations/operation_pipeline_executor.h"
 #include "operations/operation_factory.h"
 #include "operations/operation_descriptor.h"
+#include "common/types/memory_type.h"
 
 #include <vector>
 #include <memory>
@@ -57,8 +58,10 @@ public:
      * Uses the stored builder to create a new executor and swaps it atomically.
      *
      * @param operations The list of operation descriptors (moved).
+     * @param width The width of the input image.
+     * @param height The height of the input image.
      */
-    void init(std::vector<Operations::OperationDescriptor>&& operations);
+    void init(std::vector<Operations::OperationDescriptor>&& operations, const Common::ImageDim width, const Common::ImageDim height);
 
 private:
     /**

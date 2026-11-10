@@ -12,6 +12,7 @@
 #include "workers/worker_context.h"
 #include "image_processing/working_image_context.h"
 #include "managers/source_manager.h"
+#include "common/types/memory_type.h"
 
 #include <spdlog/spdlog.h>
 #include <utility>
@@ -183,7 +184,11 @@ bool StateImageManager::executeProcessing(std::vector<Operations::OperationDescr
         spdlog::trace("[StateImageManager::executeProcessing]: Executing {} operations.", ops.size());
 
         auto& halide_manager { m_pipeline_context->getHalideManager() };
-        halide_manager.init(std::move(ops));
+
+        const Common::ImageDim width { m_source_manager->width() };
+        const Common::ImageDim height { m_source_manager->height() };
+
+        halide_manager.init(std::move(ops), width, height);
 
         auto worker { m_worker_context->getHalideOperationWorker() };
 
