@@ -32,7 +32,7 @@ namespace CaptureMoment::Core {
  */
 void initialize();
 
-/*
+/**
  * @brief Sets the log level for the Core library.
  *
  * @param level_str A string representing the desired log level (e.g., "trace", "debug", "info", "warn", "error", "critical", "off").

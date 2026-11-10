@@ -28,7 +28,7 @@ inline std::once_flag s_init_flag;
 void init_logging()
 {
     try {
-        auto console_logger = spdlog::get("CaptureMoment");
+        auto console_logger { spdlog::get("CaptureMoment") };
 
         if (!console_logger) {
             console_logger = spdlog::stdout_color_mt("CaptureMoment");
@@ -121,7 +121,7 @@ void init_backend_decider()
     CaptureMoment::Core::ImageProcessing::BenchmarkingBackendDecider benchmark_decider;
 
     // 2. Run benchmark (CPU vs GPU comparison)
-    auto backend = benchmark_decider.decide();
+    auto backend { benchmark_decider.decide() };
 
     // 3. Store the selected MemoryType in global Config
     CaptureMoment::Core::Config::AppConfig::instance().setProcessingBackend(backend);
@@ -133,6 +133,15 @@ void init_backend_decider()
     spdlog::info("[CoreInitialization] Backend configuration complete.");
 }
 
+void debug_mode()
+{
+    // Halide Debug
+    #if defined(_WIN32)
+    _putenv("HL_DEBUG_AUTOSCHEDULE=2");
+    #else
+    setenv("HL_DEBUG_AUTOSCHEDULE", "2", 1);
+    #endif
+}
 // ============================================================
 // Main Initialization Logic
 // ============================================================
@@ -146,6 +155,9 @@ void perform_initialization()
 
     // Step 3: Run Benchmark Decider & Setup Config
     init_backend_decider();
+
+    // Step 4: Optional Debug Mode
+    debug_mode();
 }
 
 } 
