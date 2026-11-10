@@ -73,10 +73,14 @@ public:
      *
      * @param operations The list of operation descriptors.
      * @param factory The operation factory reference.
+     * @param width The width of the input image.
+     * @param height The height of the input image.
      */
     void init(
         std::vector<Operations::OperationDescriptor>&& operations,
-        const Operations::OperationFactory& factory
+        const Operations::OperationFactory& factory,
+        const Common::ImageDim width,
+        const Common::ImageDim height
     );
 
     /**
@@ -104,8 +108,6 @@ protected:
      */
     virtual void applyScheduling(Halide::Func& pipeline, Halide::Var& x, Halide::Var& y, Halide::Var& c) const = 0;
     
-    [[nodiscard]] bool executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer) override;
-
     /**
      * @brief Applies all operations to the input function.
      * @details  Chains the operations together to form a complete Halide function graph.
@@ -122,8 +124,10 @@ protected:
      * @details
      * Iterates through operations, creates concrete instances, and chains them
      * using `m_input` as the source.
+     * @param width The width of the input image.
+     * @param height The height of the input image.
      */
-    virtual void buildOperationChain() = 0;
+    virtual void buildOperationChain(const Common::ImageDim width, const Common::ImageDim height) = 0;
 
     /**
      * @brief The compiled Halide pipeline object.

@@ -36,7 +36,9 @@ public:
     [[nodiscard]] bool execute(ImageProcessing::IWorkingImageHardware& working_image) override;
 
 protected:
-    void buildOperationChain() override;
+    void buildOperationChain(const Common::ImageDim width, const Common::ImageDim height) override;
+    [[nodiscard]] bool executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer) override;
+
 
 private:
     void applyScheduling(Halide::Func& pipeline, Halide::Var& x, Halide::Var& y, Halide::Var& c) const override;
