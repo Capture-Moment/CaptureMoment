@@ -142,7 +142,7 @@ include(Deployment)
 # ============================================================
 message(STATUS "")
 message(STATUS "==============================================================")
-message(STATUS "|   CaptureMoment ${PROJECT_VERSION} Configuration            |")
+message(STATUS "|   CaptureMoment ${PROJECT_VERSION} Configuration            ")
 message(STATUS "==============================================================")
 message(STATUS "|   Compiler        : ${COMPILER_NAME}")
 message(STATUS "|   Build Type      : ${CMAKE_BUILD_TYPE}")
