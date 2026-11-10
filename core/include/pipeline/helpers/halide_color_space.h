@@ -201,6 +201,7 @@ inline Halide::Func oklabToProPhotoLinear(const Halide::Func& input, const Halid
 
     return rgb_func;
 
-} // namespace ColorSpace
+}
 
+}  // namespace ColorSpace
 } // namespace CaptureMoment::Core::Pipeline
