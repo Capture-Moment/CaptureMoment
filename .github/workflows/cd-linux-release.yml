@@ -113,6 +113,10 @@ jobs:
           export PATH=/opt/qt/6.10.2/gcc_64/bin:$PATH
           cp assets/icons/favicon.png /tmp/capturemoment.png
 
+          mkdir -p appdir/usr/lib
+          cp -L "$(gcc -print-file-name=libstdc++.so.6)" appdir/usr/lib/
+          cp -L "$(gcc -print-file-name=libgcc_s.so.1)"   appdir/usr/lib/
+
           /opt/tools/linuxdeploy-x86_64.AppImage \
             --appdir appdir \
             --executable build/release-ninja/CaptureMoment \

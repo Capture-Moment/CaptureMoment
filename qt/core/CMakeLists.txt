@@ -175,18 +175,6 @@ target_include_directories(${CAPTUREMOMENT_QT_CORE_LIB}
     # "${CMAKE_SOURCE_DIR}/core/include"
 )
 
-install(TARGETS ${CAPTUREMOMENT_QT_CORE_LIB}
-    EXPORT CaptureMomentQtCoreTargets 
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
-    FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/capturemoment_qt_core
-)
-
-install(DIRECTORY include/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/capturemoment_qt_core
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-)
-
 message(STATUS "CaptureMoment Qt Core Library configured successfully.")
 message(STATUS "   - Target: ${CAPTUREMOMENT_QT_CORE_LIB}")
 message(STATUS "")
