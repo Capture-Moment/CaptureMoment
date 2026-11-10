@@ -53,7 +53,7 @@ enum class DemosaicAlgorithm : std::uint8_t {
     vcd,        ///< Variance of Color Difference.
     mixed,      ///< Mixed demosaicing approach.
     lmmse,      ///< Linear Minimum Mean Square Error.
-    amaze,      ///< Adaptive Malvar-He-Cutler algorithm. Best quality, slower.
+    amaze,      ///< Aliasing Minimization and Zipper Elimination.
     dht,        ///< DHT-based demosaicing.
     aahd,       ///< Advanced Adaptive Homogeneity-Directed.
     none        ///< No demosaicing (return raw Bayer pattern).
