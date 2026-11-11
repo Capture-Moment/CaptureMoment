@@ -184,113 +184,48 @@ endfunction()
 #
 # Called after find_halide_package().
 # ============================================================
+# ============================================================
+# Halide autoscheduler runtime plugins
+#
+# Called after find_halide_package(). Looks for the
+# HalideAutoschedulers CMake package inside the same Halide
+# install as the one used by the project venv.
+# ============================================================
 function(find_halide_autoschedulers)
 
-    set(HALIDE_PLUGIN_FILES "" PARENT_SCOPE)
+    message(STATUS "Halide autoschedulers: locating Adams2019 / Anderson2021...")
 
-    # ------------------------------------------------------------
-    # Attempt 1: official imported targets
-    # ------------------------------------------------------------
-    message(STATUS "Halide autoschedulers: checking for imported targets (Halide::Adams2019, Halide::Anderson2021)...")
-    find_package(HalideAutoschedulers QUIET)
-
-    if(TARGET Halide::Adams2019 AND TARGET Halide::Anderson2021)
-        message(STATUS "Halide autoschedulers: FOUND via imported targets.")
-        set(_resolved TRUE)
-        foreach(_tgt Halide::Adams2019 Halide::Anderson2021)
-            # Resolve the real file for display: generator expressions
-            # like $<TARGET_FILE:...> only expand at build time, so we
-            # query the imported location for the log.
-            set(_loc "")
-            foreach(_cfg IMPORTED_LOCATION
-                         IMPORTED_LOCATION_RELEASE
-                         IMPORTED_LOCATION_RELWITHDEBINFO
-                         IMPORTED_LOCATION_DEBUG)
-                if(NOT _loc)
-                    get_target_property(_loc ${_tgt} ${_cfg})
-                endif()
-            endforeach()
-            if(_loc AND NOT _loc STREQUAL "_loc-NOTFOUND")
-                message(STATUS "   - ${_tgt} -> ${_loc}")
-            else()
-                message(STATUS "   - ${_tgt} -> (file resolved at build time via TARGET_FILE)")
-            endif()
-        endforeach()
-        set(HALIDE_PLUGIN_FILES
-            "$<TARGET_FILE:Halide::Adams2019>"
-            "$<TARGET_FILE:Halide::Anderson2021>"
-            PARENT_SCOPE)
-        message(STATUS "Halide autoschedulers: deployment list OK (2 plugins).")
-        return()
+    if(NOT HALIDE_PYTHON_EXECUTABLE)
+        message(FATAL_ERROR "HALIDE_PYTHON_EXECUTABLE is not set: call find_halide_package() first.")
     endif()
 
-    # ------------------------------------------------------------
-    # Attempt 2: bounded search inside the halide install dir
-    # ------------------------------------------------------------
-    message(STATUS "Halide autoschedulers: imported targets not found. Falling back to halide site-packages search...")
-
-    # The venv python is the one find_halide_package() installed the
-    # wheel into (bin/ on POSIX, Scripts/ on Windows).
-    find_program(_halide_python
-        NAMES python python3
-        HINTS
-            "${CMAKE_SOURCE_DIR}/.venv/bin"
-            "${CMAKE_SOURCE_DIR}/.venv/Scripts"
-        NO_DEFAULT_PATH
-    )
-    if(NOT _halide_python)
-        message(FATAL_ERROR
-            "Halide autoschedulers: project venv python not found "
-            "(searched .venv/bin and .venv/Scripts only, NO_DEFAULT_PATH). "
-            "Cannot locate the halide site-packages directory.")
-    endif()
-    message(STATUS "Halide autoschedulers: using venv python: ${_halide_python}")
-
-    # The binding reports its own install dir — the authoritative
-    # location, the same call find_halide_package() already relies on.
+    # Same authoritative install dir as find_halide_package()
     execute_process(
-        COMMAND "${_halide_python}" -c "import halide; print(halide.install_dir())"
-        OUTPUT_VARIABLE _halide_install_dir
+        COMMAND "${HALIDE_PYTHON_EXECUTABLE}" -c "import halide; print(halide.install_dir())"
+        OUTPUT_VARIABLE _halide_dir
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET
-        RESULT_VARIABLE _halide_query_rc)
-    if(NOT _halide_query_rc EQUAL 0 OR NOT EXISTS "${_halide_install_dir}")
-        message(FATAL_ERROR
-            "Halide autoschedulers: 'import halide' failed or returned an "
-            "invalid install_dir ('${_halide_install_dir}'). "
-            "Is the halide wheel installed in the project venv?")
+        RESULT_VARIABLE _halide_query_rc
+    )
+    if(NOT _halide_query_rc EQUAL 0 OR NOT EXISTS "${_halide_dir}")
+        message(FATAL_ERROR "Halide autoschedulers: cannot resolve halide.install_dir() from ${HALIDE_PYTHON_EXECUTABLE}.")
     endif()
-    message(STATUS "Halide autoschedulers: halide.install_dir() -> ${_halide_install_dir}")
+    file(TO_CMAKE_PATH "${_halide_dir}" _halide_dir)
 
-    # Bounded search: autoschedule_* inside the halide install dir ONLY.
-    file(GLOB_RECURSE _plugins
-        "${_halide_install_dir}/autoschedule_adams2019.*"
-        "${_halide_install_dir}/autoschedule_anderson2021.*"
+    # Search the autoschedulers CMake package in the same install
+    find_package(HalideAutoschedulers QUIET
+        PATHS "${_halide_dir}"
+        NO_DEFAULT_PATH
     )
 
-    if(NOT _plugins)
+    if(NOT TARGET Halide::Adams2019 OR NOT TARGET Halide::Anderson2021)
         message(FATAL_ERROR
-            "Halide autoschedulers: no autoschedule_adams2019 / "
-            "autoschedule_anderson2021 plugin found inside "
-            "${_halide_install_dir}. Your Halide installation does not "
-            "ship the autoschedulers, but Adams2019 is required at "
-            "runtime by the image pipeline.")
+            "Halide autoscheduler targets not found in ${_halide_dir}. "
+            "Check that the halide wheel ships autoschedule_adams2019 and autoschedule_anderson2021 "
+            "(find them with: Get-ChildItem \"${_halide_dir}\" -Recurse -Filter \"HalideAutoschedulers*Config.cmake\").")
     endif()
 
-    list(LENGTH _plugins _n)
-    if(_n LESS 2)
-        message(FATAL_ERROR
-            "Halide autoschedulers: expected 2 plugins "
-            "(adams2019 + anderson2021), found ${_n} inside "
-            "${_halide_install_dir}: ${_plugins}")
-    endif()
-
-    set(HALIDE_PLUGIN_FILES "${_plugins}" PARENT_SCOPE)
-    message(STATUS "Halide autoschedulers: FOUND via halide install dir search:")
-    foreach(_p IN LISTS _plugins)
-        message(STATUS "   - ${_p}")
-    endforeach()
-    message(STATUS "Halide autoschedulers: deployment list OK (${_n} plugins).")
+    message(STATUS "Halide autoschedulers: FOUND via imported targets (Halide::Adams2019, Halide::Anderson2021).")
 endfunction()
 
 # ============================================================
