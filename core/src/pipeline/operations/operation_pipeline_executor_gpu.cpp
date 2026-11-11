@@ -15,7 +15,7 @@ namespace CaptureMoment::Core::Pipeline {
 
 
 /**
- * Loads the Anderson2019 autoscheduler plugin exactly once per process.
+ * Loads the Anderson2021 autoscheduler plugin exactly once per process.
  * Non-fatal on failure: if the autoscheduler is statically linked, no DLL
  * exists to dlopen and the registration is already active. If it is really
  * missing, apply_autoscheduler() fails later with a clear error.
@@ -26,9 +26,9 @@ void ensureAndersonPluginLoaded()
     std::call_once(flag, [] {
         try {
             Halide::load_plugin("autoschedule_anderson2021");
-            spdlog::info("[OperationPipelineExecutorCPU]: anderson2021 plugin loaded.");
+            spdlog::info("[OperationPipelineExecutorGPU]: anderson2021 plugin loaded.");
         } catch (const std::exception& e) {
-            spdlog::warn("[OperationPipelineExecutorCPU]: load_plugin(anderson2021) failed ({}). "
+            spdlog::warn("[OperationPipelineExecutorGPU]: load_plugin(anderson2021) failed ({}). "
                          "Expected if anderson2021 is statically linked.", e.what());
         }
     });
@@ -44,7 +44,6 @@ void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim wi
     Halide::Func oklab_image  { ColorSpace::proPhotoLinearToOklab(m_input, x, y, c) };
     Halide::Func ops_result   { applyOperations(oklab_image, x, y, c) };
     Halide::Func final_output { ColorSpace::oklabToProPhotoLinear(ops_result, x, y, c) };
-
     // Output layout: interleaved RGBA (chunky). Stride constraints are KEPT:
     // they describe the memory layout and guide vectorization decisions.
     final_output.output_buffer().dim(0).set_stride(4);
@@ -57,30 +56,29 @@ void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim wi
     m_input.set_estimates({{0, w}, {0, h}, {0, 4}});
     final_output.output_buffer().set_estimates({{0, w}, {0, h}, {0, 4}});
 
-    const Halide::Target target { Halide::get_host_target() };
+    const Halide::Target target { Config::AppConfig::getHalideTarget() };
 
     Halide::AutoschedulerParams params;
     params.name = "Anderson2021";
-
     try {
         m_pipeline = Halide::Pipeline(final_output);
         m_pipeline.apply_autoscheduler(target, params);
         m_pipeline.compile_jit(target);
 
         m_chain_built = true;
-        spdlog::info("[OperationPipelineExecutorCPU::buildOperationChain]: Adams2019 auto-scheduled and compiled "
+        spdlog::info("[OperationPipelineExecutorGPU::buildOperationChain]: Adams2019 auto-scheduled and compiled "
                      "for {}x{}, (target={}).", w, h, target.to_string());
     }
     catch (const Halide::CompileError& e) {
-        spdlog::critical("[OperationPipelineExecutorCPU::buildOperationChain]: CompileError: {}", e.what());
+        spdlog::critical("[OperationPipelineExecutorGPU::buildOperationChain]: CompileError: {}", e.what());
         m_chain_built = false;
     }
     catch (const Halide::RuntimeError& e) {
-        spdlog::critical("[OperationPipelineExecutorCPU::buildOperationChain]: RuntimeError: {}", e.what());
+        spdlog::critical("[OperationPipelineExecutorGPU::buildOperationChain]: RuntimeError: {}", e.what());
         m_chain_built = false;
     }
     catch (const std::exception& e) {
-        spdlog::critical("[OperationPipelineExecutorCPU::buildOperationChain]: Unexpected: {}", e.what());
+        spdlog::critical("[OperationPipelineExecutorGPU::buildOperationChain]: Unexpected: {}", e.what());
         m_chain_built = false;
     }
 }
@@ -104,17 +102,12 @@ bool OperationPipelineExecutorGPU::executeOnHalideBuffer(Halide::Buffer<float>& 
     }
 
     try {
+
         // 1. Bind the actual C++ buffer memory to the Halide ImageParam
         // This is extremely fast (pointer copy), no data duplication.
         m_input.set(input_buffer);
+
         // 2. Get the target for execution
-        // CRITICAL: For GPU execution, realize() MUST receive the target parameter
-        Halide::Target target { Config::AppConfig::getHalideTarget() };
-
-        spdlog::debug("[OperationPipelineExecutorGPU::executeOnHalideBuffer]: Halide Target Architecture: {}",
-                     target.to_string());
-
-        // 3. Execute the pipeline on the correct device (CPU or GPU)
         m_pipeline.realize(output_buffer);
         return true;
     }
