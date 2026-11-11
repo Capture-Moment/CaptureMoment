@@ -53,8 +53,8 @@ void OperationPipelineExecutorCPU::buildOperationChain(const Common::ImageDim wi
 
     // Adams2019 estimates (input and output). Using the dimensions of the
     // currently loaded image: exact by construction.
-    const int w { width };
-    const int h { height };
+    const int w { static_cast<int>(width) };
+    const int h { static_cast<int>(height) };
     m_input.set_estimates({{0, w}, {0, h}, {0, 4}});
     final_output.output_buffer().set_estimates({{0, w}, {0, h}, {0, 4}});
 
@@ -64,14 +64,9 @@ void OperationPipelineExecutorCPU::buildOperationChain(const Common::ImageDim wi
     params.name = "Adams2019";
 
     // hardware_concurrency() may legally return 0 -> clamp to at least 1.
-    const unsigned int cores { std::max(1u, std::thread::hardware_concurrency()) };
-    params.extra["parallelism"] = std::to_string(cores);
-
-    // Empty path = weights embedded in the autoscheduler build.
-    // If your plugin build does NOT embed them, bundle baseline.weights as an
-    // application resource and resolve its path at runtime (never a hardcoded
-    // site-packages path).
-   // params.extra["weights_path"] = "";
+    auto const cores { std::thread::hardware_concurrency() };
+    params.extra["parallelism"] = std::to_string(std::max(1u, cores));
+    params.extra["beam_size"] = "8";
 
     // Guard rail: caps the memory the schedule may materialize (interactive app).
     // Bytes. Tune to the target machine class.
