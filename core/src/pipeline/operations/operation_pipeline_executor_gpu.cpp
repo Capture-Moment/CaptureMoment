@@ -49,7 +49,6 @@ void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim wi
     final_output.output_buffer().dim(0).set_stride(4);
     final_output.output_buffer().dim(2).set_stride(1);
 
-    // Adams2019 estimates (input and output). Using the dimensions of the
     // currently loaded image: exact by construction.
     const int w { static_cast<int>(width) };
     const int h { static_cast<int>(height) };
@@ -66,7 +65,7 @@ void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim wi
         m_pipeline.compile_jit(target);
 
         m_chain_built = true;
-        spdlog::info("[OperationPipelineExecutorGPU::buildOperationChain]: Adams2019 auto-scheduled and compiled "
+        spdlog::info("[OperationPipelineExecutorGPU::buildOperationChain]: Anderson2021 auto-scheduled and compiled "
                      "for {}x{}, (target={}).", w, h, target.to_string());
     }
     catch (const Halide::CompileError& e) {

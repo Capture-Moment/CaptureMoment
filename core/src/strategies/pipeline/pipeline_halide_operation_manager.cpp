@@ -16,12 +16,12 @@ PipelineHalideOperationManager::PipelineHalideOperationManager()
 {
     // Register all available operations (Concrete Creators)
     Core::Operations::OperationRegistry::registerAll(*m_operation_factory);
-    spdlog::debug("PipelineHalideOperationManager: Constructed with Pipeline and Worker contexts.");
+    spdlog::debug("[PipelineHalideOperationManager::PipelineHalideOperationManager]: Constructed with Pipeline and Worker contexts.");
     
     auto base_executor { Pipeline::PipelineBuilder::build(Pipeline::PipelineType::HalideOperation) };
 
     if (!base_executor) {
-        spdlog::error("PipelineHalideOperationManager::PipelineHalideOperationManager: Builder returned null.");
+        spdlog::error("[PipelineHalideOperationManager::PipelineHalideOperationManager]: Builder returned null.");
         return;
     }
 
@@ -29,7 +29,7 @@ PipelineHalideOperationManager::PipelineHalideOperationManager()
     auto* concrete_ptr { dynamic_cast<Pipeline::OperationPipelineExecutor*>(base_executor.get()) };
     
     if (!concrete_ptr) {
-        spdlog::error("PipelineHalideOperationManager::PipelineHalideOperationManager: Critical type mismatch.");
+        spdlog::error("[PipelineHalideOperationManager::PipelineHalideOperationManager]: Critical type mismatch.");
         return;
     }
 
