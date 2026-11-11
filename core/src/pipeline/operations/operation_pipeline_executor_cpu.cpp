@@ -4,7 +4,6 @@
 
 #include <spdlog/spdlog.h>
 #include <algorithm>
-#include <cstdint>
 #include <mutex>
 #include <thread>
 
