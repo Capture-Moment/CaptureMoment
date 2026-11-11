@@ -107,7 +107,7 @@ bool OperationPipelineExecutorGPU::executeOnHalideBuffer(Halide::Buffer<float>& 
         // This is extremely fast (pointer copy), no data duplication.
         m_input.set(input_buffer);
 
-        // 2. Get the target for execution
+        // 2. Execute the pipeline on the correct device
         m_pipeline.realize(output_buffer);
         return true;
     }
