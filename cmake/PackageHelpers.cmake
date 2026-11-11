@@ -121,10 +121,10 @@ function(find_halide_package)
 
     # 1. Create the venv if it does not exist
     if(NOT EXISTS "${_venv_python}")
-        find_package(Python3 COMPONENTS Interpreter REQUIRED)
+        find_package(Python COMPONENTS Interpreter REQUIRED)
         message(STATUS "Halide: creating project virtualenv in ${_venv_dir}...")
         execute_process(
-            COMMAND "${Python3_EXECUTABLE}" -m venv "${_venv_dir}"
+            COMMAND "${Python_EXECUTABLE}" -m venv "${_venv_dir}"
             RESULT_VARIABLE _venv_rc
         )
         if(NOT _venv_rc EQUAL 0 OR NOT EXISTS "${_venv_python}")
@@ -169,9 +169,15 @@ function(find_halide_package)
 
     # 4. Locate the CMake package inside the venv
     find_package(Halide ${_halide_version} CONFIG REQUIRED
-        PATHS "${_halide_dir}"
+        PATHS 
+          "${_halide_dir}"
+          "${_venv_dir}"
         NO_DEFAULT_PATH
     )
+
+    if(NOT TARGET Halide::Halide)
+        message(FATAL_ERROR "Halide found, but target Halide::Halide is missing.")
+    endif()
 
     set(Halide_FOUND TRUE PARENT_SCOPE)
     set(Halide_VERSION "${Halide_VERSION}" PARENT_SCOPE)
@@ -183,13 +189,6 @@ endfunction()
 # Halide autoscheduler runtime plugins
 #
 # Called after find_halide_package().
-# ============================================================
-# ============================================================
-# Halide autoscheduler runtime plugins
-#
-# Called after find_halide_package(). Looks for the
-# HalideAutoschedulers CMake package inside the same Halide
-# install as the one used by the project venv.
 # ============================================================
 function(find_halide_autoschedulers)
 
