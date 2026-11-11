@@ -192,41 +192,45 @@ endfunction()
 # ============================================================
 function(find_halide_autoschedulers)
 
-    message(STATUS "Halide autoschedulers: locating Adams2019 / Anderson2021...")
+    if(TARGET Halide::Adams2019 AND TARGET Halide::Anderson2021)
+        return()
+    endif()
 
     if(NOT HALIDE_PYTHON_EXECUTABLE)
         message(FATAL_ERROR "HALIDE_PYTHON_EXECUTABLE is not set: call find_halide_package() first.")
     endif()
 
-    # Same authoritative install dir as find_halide_package()
+    # <venv>/bin/python or <venv>/Scripts/python.exe  ->  <venv>
+    get_filename_component(_venv_root "${HALIDE_PYTHON_EXECUTABLE}/../.." ABSOLUTE)
+
     execute_process(
         COMMAND "${HALIDE_PYTHON_EXECUTABLE}" -c "import halide; print(halide.install_dir())"
         OUTPUT_VARIABLE _halide_dir
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET
-        RESULT_VARIABLE _halide_query_rc
-    )
-    if(NOT _halide_query_rc EQUAL 0 OR NOT EXISTS "${_halide_dir}")
-        message(FATAL_ERROR "Halide autoschedulers: cannot resolve halide.install_dir() from ${HALIDE_PYTHON_EXECUTABLE}.")
-    endif()
+        RESULT_VARIABLE _rc)
     file(TO_CMAKE_PATH "${_halide_dir}" _halide_dir)
 
-    # Search the autoschedulers CMake package in the same install
-    find_package(HalideAutoschedulers QUIET
-        PATHS "${_halide_dir}"
-        NO_DEFAULT_PATH
-    )
+    message(STATUS "Halide autoschedulers: Halide_DIR=${Halide_DIR}")
+    message(STATUS "Halide autoschedulers: WITH_AUTOSCHEDULERS=${WITH_AUTOSCHEDULERS}")
+
+    # HalideAutoschedulers is a separate CMake package. Search next to the
+    # Halide package config, in the halide install dir, and in the venv root.
+    find_package(HalideAutoschedulers CONFIG QUIET
+        PATHS
+            "${_halide_dir}"
+            "${_venv_root}"
+        NO_DEFAULT_PATH)
 
     if(NOT TARGET Halide::Adams2019 OR NOT TARGET Halide::Anderson2021)
         message(FATAL_ERROR
-            "Halide autoscheduler targets not found in ${_halide_dir}. "
-            "Check that the halide wheel ships autoschedule_adams2019 and autoschedule_anderson2021 "
-            "(find them with: Get-ChildItem \"${_halide_dir}\" -Recurse -Filter \"HalideAutoschedulers*Config.cmake\").")
+            "HalideAutoschedulers package not found (Halide_DIR=${Halide_DIR}, "
+            "venv=${_venv_root}). List what the wheel installed with: "
+            "find \"${_venv_root}\" -iname '*autoschedul*'")
     endif()
 
-    message(STATUS "Halide autoschedulers: FOUND via imported targets (Halide::Adams2019, Halide::Anderson2021).")
+    message(STATUS "Halide autoschedulers: FOUND (Halide::Adams2019, Halide::Anderson2021).")
 endfunction()
-
 # ============================================================
 # Find magic_enum
 # ============================================================
