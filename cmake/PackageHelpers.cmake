@@ -112,7 +112,6 @@ endfunction()
 # HALIDE_PREFIX, an active virtualenv, or a system-wide install.
 # ============================================================
 function(find_halide_package)
-
     message(STATUS "Searching for Halide...")
 
     find_package(Halide 22.1 CONFIG QUIET)
@@ -121,25 +120,40 @@ function(find_halide_package)
     if(NOT Halide_FOUND)
         set(_halide_version "22.1.0")
 
+        # Use native CMake Python3 module to find the interpreter cleanly
+        find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
         # Locate or create the project-local venv
-        if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
+        if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.venv")
             message(STATUS "Halide: creating project virtualenv (.venv)...")
             execute_process(
-                COMMAND python3 -m venv "${CMAKE_SOURCE_DIR}/.venv"
+                COMMAND ${Python3_EXECUTABLE} -m venv "${CMAKE_SOURCE_DIR}/.venv"
                 RESULT_VARIABLE _venv_rc)
         endif()
 
-        if(EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
+        # Determine venv paths according to the operating system
+        if(WIN32)
+            set(_venv_pip "${CMAKE_SOURCE_DIR}/.venv/Scripts/pip.exe")
+            set(_venv_python "${CMAKE_SOURCE_DIR}/.venv/Scripts/python.exe")
+        else()
+            set(_venv_pip "${CMAKE_SOURCE_DIR}/.venv/bin/pip")
+            set(_venv_python "${CMAKE_SOURCE_DIR}/.venv/bin/python")
+        endif()
+
+        # Install the pinned Halide wheel into the venv
+        if(EXISTS "${_venv_python}")
             message(STATUS "Halide not found — installing halide==${_halide_version} into .venv...")
             execute_process(
-                COMMAND "${CMAKE_SOURCE_DIR}/.venv/bin/pip" install "halide==${_halide_version}"
+                COMMAND "${_venv_pip}" install "halide==${_halide_version}"
                 RESULT_VARIABLE _pip_rc)
+        else()
+            set(_pip_rc 1)
         endif()
 
         if(_pip_rc EQUAL 0)
-            # Re-run the venv query from the contributor's code, then retry find_package
+            # Query the Halide installation directory from Python
             execute_process(
-                COMMAND "${CMAKE_SOURCE_DIR}/.venv/bin/python" -c "import halide; print(halide.install_dir())"
+                COMMAND "${_venv_python}" -c "import halide; print(halide.install_dir())"
                 OUTPUT_VARIABLE _halide_dir
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 ERROR_QUIET
