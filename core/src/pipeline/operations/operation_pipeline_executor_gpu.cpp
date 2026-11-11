@@ -13,38 +13,76 @@
 
 namespace CaptureMoment::Core::Pipeline {
 
+
+/**
+ * Loads the Anderson2019 autoscheduler plugin exactly once per process.
+ * Non-fatal on failure: if the autoscheduler is statically linked, no DLL
+ * exists to dlopen and the registration is already active. If it is really
+ * missing, apply_autoscheduler() fails later with a clear error.
+ */
+void ensureAndersonPluginLoaded()
+{
+    static std::once_flag flag;
+    std::call_once(flag, [] {
+        try {
+            Halide::load_plugin("autoschedule_anderson2021");
+            spdlog::info("[OperationPipelineExecutorCPU]: anderson2021 plugin loaded.");
+        } catch (const std::exception& e) {
+            spdlog::warn("[OperationPipelineExecutorCPU]: load_plugin(anderson2021) failed ({}). "
+                         "Expected if anderson2021 is statically linked.", e.what());
+        }
+    });
+}
 void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim width, const Common::ImageDim height)
 {
-  /*  Halide::Var x("x"), y("y"), c("c");
+    ensureAndersonPluginLoaded();
 
-    // 1. Chunky input from Halide::ImageParam (x,y,c) -> (x,y,c)
-    Halide::Func rgb_input("rgb_input");
-    rgb_input(x, y, c) = m_input(x, y, c);
+    Halide::Var x("x"), y("y"), c("c");
 
-    // ====================================================================
-    // OKLAB DIRECT (No Transpose) + OPERATIONS
-    // ====================================================================
-    Halide::Func oklab_image { ColorSpace::rgbToOklab(rgb_input, x, y, c) };
-    Halide::Func ops_result { applyOperations(oklab_image, x, y, c) };
-    Halide::Func final_rgb_output { ColorSpace::oklabToRgb(ops_result, x, y, c) };
+    // Linear graph, zero manual scheduling directive anywhere:
+    // RGB(A) -> Oklab -> fused adjustments -> RGB(A)
+    Halide::Func oklab_image  { ColorSpace::proPhotoLinearToOklab(m_input, x, y, c) };
+    Halide::Func ops_result   { applyOperations(oklab_image, x, y, c) };
+    Halide::Func final_output { ColorSpace::oklabToProPhotoLinear(ops_result, x, y, c) };
 
-    // ====================================================================
-    // SCHEDULING & COMPILATION GPU
-    // ====================================================================
-    final_rgb_output.output_buffer().dim(0).set_stride(4);
-    final_rgb_output.output_buffer().dim(2).set_stride(1);
+    // Output layout: interleaved RGBA (chunky). Stride constraints are KEPT:
+    // they describe the memory layout and guide vectorization decisions.
+    final_output.output_buffer().dim(0).set_stride(4);
+    final_output.output_buffer().dim(2).set_stride(1);
 
-    Halide::Target target { Config::AppConfig::getHalideTarget() };
+    // Adams2019 estimates (input and output). Using the dimensions of the
+    // currently loaded image: exact by construction.
+    const int w { static_cast<int>(width) };
+    const int h { static_cast<int>(height) };
+    m_input.set_estimates({{0, w}, {0, h}, {0, 4}});
+    final_output.output_buffer().set_estimates({{0, w}, {0, h}, {0, 4}});
+
+    const Halide::Target target { Halide::get_host_target() };
+
+    Halide::AutoschedulerParams params;
+    params.name = "Anderson2021";
 
     try {
-        final_rgb_output.compile_jit(target);
-        m_pipeline = Halide::Pipeline(final_rgb_output);
+        m_pipeline = Halide::Pipeline(final_output);
+        m_pipeline.apply_autoscheduler(target, params);
+        m_pipeline.compile_jit(target);
+
         m_chain_built = true;
-        spdlog::info("[OperationPipelineExecutorGPU::buildOperationChain]: Pipeline compiled (Direct Chunky Oklab).");
-    } catch (const Halide::CompileError& e) {
-        spdlog::critical("[OperationPipelineExecutorGPU::buildOperationChain]: {}", e.what());
+        spdlog::info("[OperationPipelineExecutorCPU::buildOperationChain]: Adams2019 auto-scheduled and compiled "
+                     "for {}x{}, (target={}).", w, h, target.to_string());
+    }
+    catch (const Halide::CompileError& e) {
+        spdlog::critical("[OperationPipelineExecutorCPU::buildOperationChain]: CompileError: {}", e.what());
         m_chain_built = false;
-    }*/
+    }
+    catch (const Halide::RuntimeError& e) {
+        spdlog::critical("[OperationPipelineExecutorCPU::buildOperationChain]: RuntimeError: {}", e.what());
+        m_chain_built = false;
+    }
+    catch (const std::exception& e) {
+        spdlog::critical("[OperationPipelineExecutorCPU::buildOperationChain]: Unexpected: {}", e.what());
+        m_chain_built = false;
+    }
 }
 
 bool OperationPipelineExecutorGPU::execute(ImageProcessing::IWorkingImageHardware& working_image)
@@ -55,7 +93,7 @@ bool OperationPipelineExecutorGPU::execute(ImageProcessing::IWorkingImageHardwar
         spdlog::error("[OperationPipelineExecutorGPU::execute]: Invalid Halide buffer or GPU implementation.");
         return false;
     }
-    
+
     return executeOnHalideBuffer(gpu_impl->getOriginalHalideBuffer(), gpu_impl->getHalideBuffer());
 }
 
