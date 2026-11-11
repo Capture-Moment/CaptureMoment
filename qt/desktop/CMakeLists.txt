@@ -1,6 +1,7 @@
 # qt/desktop/CMakeLists.txt
 
 project(CaptureMomentUIDesktop LANGUAGES CXX)
+include(GNUInstallDirs)
 
 message(STATUS "Configuring CaptureMoment Desktop UI...")
 
@@ -16,7 +17,6 @@ set_target_properties(${CAPTUREMOMENT_DESKTOP_TARGET} PROPERTIES
     AUTORCC TRUE
     AUTOUIC TRUE
 )
-
 
 set(QOBJECT_HEADERS
     # Utils
@@ -183,45 +183,27 @@ endif()
 
 target_sources(${CAPTUREMOMENT_DESKTOP_TARGET} PRIVATE ${PLATFORM_IMPL})
 
-
 # =====================================================================
-# Automatic deployment next to the executable (dev convenience)
+# Halide autoscheduler plugins (imported targets from PackageHelpers)
 # =====================================================================
-if(WIN32)
-    find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt
-        HINTS "${Qt6Core_DIR}/../../../bin")
-    if(NOT WINDEPLOYQT_EXECUTABLE)
-        message(FATAL_ERROR "windeployqt not found next to Qt6Core")
-    endif()
+set(HALIDE_PLUGIN_TARGETS Halide::Adams2019 Halide::Anderson2021)
 
-    add_custom_command(TARGET ${CAPTUREMOMENT_DESKTOP_TARGET} POST_BUILD
-        COMMAND "${WINDEPLOYQT_EXECUTABLE}"
-                --no-translations
-                --no-system-d3d-compiler
-                --no-opengl-sw
-                --qmldir "${CMAKE_CURRENT_SOURCE_DIR}/qml"
-                $<TARGET_FILE:${CAPTUREMOMENT_DESKTOP_TARGET}>
-        VERBATIM
-    )
-
-    if(BUILD_SANITIZERS)
-    # The ASan runtime lives next to the compiler (cl.exe). Copy it next to
-    # the executable so it can be launched directly from the build dir.
-    get_filename_component(_compiler_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
-    find_file(ASAN_RUNTIME_DLL
-        NAMES clang_rt.asan_dynamic-x86_64.dll
-        HINTS "${_compiler_dir}"
-    )
-    if(NOT ASAN_RUNTIME_DLL)
-        message(FATAL_ERROR "ASan runtime DLL not found next to ${CMAKE_CXX_COMPILER}")
-    endif()
-
+# Build tree: copy next to the executable after each build
+foreach(_tgt IN LISTS HALIDE_PLUGIN_TARGETS)
     add_custom_command(TARGET ${CAPTUREMOMENT_DESKTOP_TARGET} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${ASAN_RUNTIME_DLL}"
+                $<TARGET_FILE:${_tgt}>
                 $<TARGET_FILE_DIR:${CAPTUREMOMENT_DESKTOP_TARGET}>
+        VERBATIM
     )
-    endif()
+endforeach()
+
+# Install: next to the executable (Windows / Linux)
+if(NOT APPLE)
+    install(FILES
+        $<TARGET_FILE:Halide::Adams2019>
+        $<TARGET_FILE:Halide::Anderson2021>
+        DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 # =====================================================================
@@ -349,8 +331,6 @@ target_link_libraries(${CAPTUREMOMENT_DESKTOP_TARGET}
         capturemoment_qt_core_lib
         Qt6::Widgets
 )
-
-include(GNUInstallDirs)
 
 if(WIN32)
     add_custom_command(TARGET ${CAPTUREMOMENT_DESKTOP_TARGET} POST_BUILD
