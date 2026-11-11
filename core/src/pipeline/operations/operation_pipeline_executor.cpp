@@ -17,13 +17,13 @@ namespace CaptureMoment::Core::Pipeline {
 OperationPipelineExecutor::OperationPipelineExecutor()
 
     : IHalidePipelineExecutor(),
-      m_factory(nullptr),
-      m_chain_built(false)
+      m_chain_built(false),
+      m_factory(nullptr)
 {
     m_input.dim(0).set_stride(4);
     m_input.dim(2).set_stride(1);
 
-    spdlog::debug("[OperationPipelineExecutor]: Constructed. Input set to Float(32), 3 dimensions. Backend: {}",
+    spdlog::debug("[OperationPipelineExecutor::OperationPipelineExecutor]: Constructed. Input set to Float(32), 3 dimensions. Backend: {}",
                   static_cast<int>(Config::AppConfig::instance().getProcessingBackend()));
 }
 
@@ -34,7 +34,7 @@ void OperationPipelineExecutor::init(
     const Common::ImageDim height
 )
 {
-    spdlog::debug("[OperationPipelineExecutor::init (Move)]: Initializing with {} operations.", operations.size());
+    spdlog::debug("[OperationPipelineExecutor::init]: Initializing with {} operations.", operations.size());
 
     m_operations = std::move(operations);
     m_factory = &factory;

@@ -9,8 +9,6 @@
 
 namespace CaptureMoment::Core::Pipeline {
 
-namespace {
-
 /**
  * Loads the Adams2019 autoscheduler plugin exactly once per process.
  * Non-fatal on failure: if the autoscheduler is statically linked, no DLL
@@ -30,8 +28,6 @@ void ensureAdamsPluginLoaded()
         }
     });
 }
-
-} // namespace
 
 void OperationPipelineExecutorCPU::buildOperationChain(const Common::ImageDim width, const Common::ImageDim height)
 {
@@ -64,7 +60,7 @@ void OperationPipelineExecutorCPU::buildOperationChain(const Common::ImageDim wi
 
     // hardware_concurrency() may legally return 0 -> clamp to at least 1.
     auto const cores { std::thread::hardware_concurrency() };
-    params.extra["parallelism"] = std::to_string(std::max(1u, cores));
+    params.extra["parallelism"] = std::to_string(std::max(1U, cores));
     params.extra["beam_size"] = "8";
 
     // Guard rail: caps the memory the schedule may materialize (interactive app).

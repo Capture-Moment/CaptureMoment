@@ -38,11 +38,12 @@ void AppConfig::setProcessingBackend(Common::MemoryType backend)
     {
         m_processing_backend = backend;
 
-        const auto backend_str = (backend == Common::MemoryType::CPU_RAM)
+        const auto backend_str { (backend == Common::MemoryType::CPU_RAM)
                                      ? "CPU_RAM"
-                                     : "GPU_MEMORY";
+                                     : "GPU_MEMORY"
+        };
 
-        spdlog::info("[AppConfig] Processing backend changed to: {}", backend_str);
+        spdlog::info("[AppConfig::setProcessingBackend]: Processing backend changed to: {}", backend_str);
     }
 }
 
@@ -57,19 +58,9 @@ Common::MemoryType AppConfig::getProcessingBackend() const noexcept
 
 void AppConfig::setHalideTarget(const Halide::Target& target)
 {
-    // Update the global static target
     s_halide_target = target;
-
-    // Log the specific features configured in this target (helpful for debugging)
-    std::string features_str;
-    if (target.has_feature(Halide::Target::CUDA)) features_str += "CUDA ";
-    if (target.has_feature(Halide::Target::OpenCL)) features_str += "OpenCL ";
-    if (target.has_feature(Halide::Target::Vulkan)) features_str += "Vulkan ";
-    if (target.has_feature(Halide::Target::Metal)) features_str += "Metal ";
-    if (target.has_feature(Halide::Target::D3D12Compute)) features_str += "DirectX12 ";
-
-    spdlog::info("[AppConfig] Halide Target updated. Architecture: {}, Features: [{}]",
-                 target.to_string(), features_str);
+    spdlog::info("[AppConfig::setHalideTarget]: Halide Target updated. Architecture: {}",
+                 target.to_string());
 }
 
 const Halide::Target& AppConfig::getHalideTarget()
