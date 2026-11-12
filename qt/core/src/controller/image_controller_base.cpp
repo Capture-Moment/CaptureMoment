@@ -37,6 +37,8 @@ ImageControllerBase::ImageControllerBase(QObject* parent)
         throw std::runtime_error("[ImageControllerBase::ImageControllerBase]: Critical failure during model creation.");
     }
 
+    initializeOperations();
+
     m_display_manager = std::make_unique<Display::DisplayManager>(this);
     spdlog::info("[ImageControllerBase::ImageControllerBase]: Initialized DisplayManager");
 
@@ -303,6 +305,24 @@ void ImageControllerBase::onOperationResult(bool success, const QString& error_m
         spdlog::error("[ImageControllerBase::onOperationResult]: Operation failed - {}", error_msg.toStdString());
         emit operationFailed(error_msg);
     }
+}
+
+void ImageControllerBase::initializeOperations()
+{
+    const auto& models { m_operation_model_manager->getBaseAdjustmentModels() };
+
+    std::vector<Core::Operations::OperationDescriptor> descriptors;
+    descriptors.reserve(models.size());
+
+    for (const auto& model : models) {
+        if (model) {
+            descriptors.push_back(model->getDescriptor());
+        }
+    }
+
+    m_operation_state_manager->initialize(descriptors);
+    spdlog::info("[ImageControllerBase::initializeOperations]: {} operations initialized (all enabled, neutral values).",
+                 descriptors.size());
 }
 
 void ImageControllerBase::connectModelsToStateManager()

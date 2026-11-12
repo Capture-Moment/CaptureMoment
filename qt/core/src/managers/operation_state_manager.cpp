@@ -17,6 +17,13 @@ OperationStateManager::OperationStateManager()
     spdlog::debug("[OperationStateManager::OperationStateManager]: Constructed.");
 }
 
+void OperationStateManager::initialize(const std::vector<Core::Operations::OperationDescriptor>& descriptors)
+{
+    std::scoped_lock lock(m_mutex);
+    m_active_operations = descriptors;
+    spdlog::info("[OperationStateManager::initialize]: {} operations registered.", m_active_operations.size());
+}
+
 void OperationStateManager::addOrUpdateOperation(const Core::Operations::OperationDescriptor& descriptor)
 {
     std::scoped_lock lock(m_mutex);
@@ -31,9 +38,7 @@ void OperationStateManager::addOrUpdateOperation(const Core::Operations::Operati
         *it = descriptor;
         spdlog::debug("[OperationStateManager::addOrUpdateOperation]: Updated operation '{}'.", descriptor.name);
     } else {
-        // Add new operation
-        m_active_operations.push_back(descriptor);
-        spdlog::debug("[OperationStateManager::addOrUpdateOperation]: Added new operation '{}'.", descriptor.name);
+        spdlog::warn("[OperationStateManager]: unknown operation type, ignored.");
     }
 }
 

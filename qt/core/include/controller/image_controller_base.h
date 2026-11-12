@@ -72,6 +72,15 @@ public:
     ~ImageControllerBase();
 
     /**
+     * @brief Initializes the operation state manager with the current operation models.
+     *
+     * This method retrieves the descriptors from all registered operation models
+     * and initializes the OperationStateManager with them. It should be called
+     * after all models have been created and registered.
+     */
+    void initializeOperations();
+
+    /**
      * @brief Get current image width
      */
     [[nodiscard]] int imageWidth() const noexcept { return m_image_width; }

@@ -40,6 +40,13 @@ public:
     OperationStateManager& operator=(const OperationStateManager&) = delete;
 
     /**
+     * @brief Init operations
+     *
+     * @param descriptors list of the operations
+     */
+    void initialize(const std::vector<Core::Operations::OperationDescriptor>& descriptors);
+
+    /**
      * @brief Adds or updates an operation in the active state.
      *
      * If an operation of the same type already exists, its parameters are updated.
@@ -72,8 +79,8 @@ public:
     [[nodiscard]] std::vector<Core::Operations::OperationDescriptor> getActiveOperations() const;
 
 private:
-    mutable std::mutex m_mutex; //!< Mutex protecting access to m_active_operations.
-    std::vector<Core::Operations::OperationDescriptor> m_active_operations; //!< The current list of active operations.
+    mutable std::mutex m_mutex;
+    std::vector<Core::Operations::OperationDescriptor> m_active_operations;
 };
 
 } // namespace Managers
