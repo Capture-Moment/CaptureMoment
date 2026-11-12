@@ -133,6 +133,12 @@ public:
     [[nodiscard]] bool loadImage(std::string_view path);
 
     /**
+     * @brief initOperations initializes the pipeline with a list of operations.
+     * @param list of operations
+     * @return true if successful.
+     */
+    [[nodiscard]] bool initOperations(std::vector<Operations::OperationDescriptor> &&ops);
+    /**
      * @brief Commits the current working image (with applied operations) back to the SourceManager.
      *
      * @details

@@ -47,6 +47,18 @@ std::expected<void, ErrorHandling::CoreError> PhotoEngine::loadImage(std::string
     return {};
 }
 
+std::expected<void, ErrorHandling::CoreError>
+PhotoEngine::initOperations(std::vector<Operations::OperationDescriptor>&& ops)
+{
+    if (!m_state_manager) {
+        return std::unexpected(ErrorHandling::CoreError::Unexpected);
+    }
+    if (!m_state_manager->initOperations(std::move(ops))) {
+        return std::unexpected(ErrorHandling::CoreError::InvalidWorkingImage);
+    }
+    return {};
+}
+
 std::expected<void, ErrorHandling::CoreError> PhotoEngine::commitWorkingImageToSource()
 {
     if (!m_state_manager) {

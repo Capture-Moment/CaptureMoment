@@ -178,7 +178,17 @@ void ImageControllerBase::doLoadImage(const QString& file_path)
         );
     }
 
-    // 4. Get display size from DisplayManager
+    // 4. Build the pipeline ONCE for this image, with the neutral operation set
+    auto init_result { m_engine->initOperations(m_operation_state_manager->getActiveOperations()) };
+
+    if (!init_result)
+    {
+        spdlog::error("[ImageControllerBase::doLoadImage]: Pipeline initialization failed");
+        onImageLoadResult(false, "Failed to initialize operations");
+        return;
+    }
+
+    // 5. Get display size from DisplayManager
     QSize downsample_size { m_display_manager->downsampleSize() };
 
     if (downsample_size.isEmpty()) {
@@ -187,7 +197,7 @@ void ImageControllerBase::doLoadImage(const QString& file_path)
         return;
     }
 
-    // 5. Get downsampled image directly (GPU → small ImageRegion)
+    // 6. Get downsampled image directly (GPU → small ImageRegion)
     spdlog::debug("[ImageControllerBase::doLoadImage]: Requesting downsampled image {}x{}",
                   downsample_size.width(), downsample_size.height());
 
@@ -205,7 +215,7 @@ void ImageControllerBase::doLoadImage(const QString& file_path)
 
     spdlog::debug("[ImageControllerBase::doLoadImage]: Got downsampled image successfully");
 
-    // 6. Update DisplayManager with const& (no copy, no shared_ptr)
+    // 7. Update DisplayManager with const& (no copy, no shared_ptr)
     if (m_display_manager) {
         m_display_manager->createDisplayImage(std::move(display_image_result.value()));
         spdlog::info("[ImageControllerBase::doLoadImage]: DisplayManager updated");

@@ -70,6 +70,13 @@ public:
     [[nodiscard]] std::expected<void, ErrorHandling::CoreError> loadImage(std::string_view path);
 
     /**
+     * @brief initOperations initializes the pipeline with a list of operations.
+     * @param list of operations
+     * @return `std::expected<void, CoreError>` indicating success or the specific error type.
+     */
+    [[nodiscard]]std::expected<void, ErrorHandling::CoreError> initOperations(std::vector<Operations::OperationDescriptor>&& ops);
+
+    /**
      * @brief Commits the processed working image back to the source manager.
      *
      * Exports the current working image (potentially in GPU memory) to a CPU buffer

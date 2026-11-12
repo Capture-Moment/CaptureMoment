@@ -75,18 +75,16 @@ bool StateImageManager::loadImage(std::string_view path)
         return false;
     }
 
-    if (!m_working_image_context->prepare(std::move(tile.value()))) {
-        spdlog::error("[StateImageManager::loadImage]: Failed to prepare working image context for '{}'.", path);
-        return false;
-    }
-
-    // 3. Update State Metadata
     {
         std::scoped_lock lock(m_state_mutex);
+        if (!m_working_image_context->prepare(std::move(tile.value()))) {
+            spdlog::error("[StateImageManager::loadImage]: prepare failed for '{}'", path);
+            return false;
+        }
         m_original_image_path = std::string(path);
     }
 
-    // 4. Clear any pending operations from previous image
+    // 3. Clear any pending operations from previous image
     {
         std::scoped_lock lock(m_work_mutex);
         m_pending_work.reset();
@@ -98,6 +96,34 @@ bool StateImageManager::loadImage(std::string_view path)
     return true;
 }
 
+bool StateImageManager::initOperations(std::vector<Operations::OperationDescriptor> &&ops)
+{
+    // Wait for any running processing before rebuilding the pipeline
+    waitForPendingProcessing();
+
+    const Common::ImageDim width  { m_source_manager->width() };
+    const Common::ImageDim height { m_source_manager->height() };
+
+    if (width == 0 || height == 0) {
+        spdlog::error("[StateImageManager::initOperations]: No image loaded.");
+        return false;
+    }
+
+    try {
+        auto& halide_manager { m_pipeline_context->getHalideManager() };
+
+        // Builds the pipeline for (width, height) and this structure.
+        // Only the structure and size matter here; values are set later.
+        halide_manager.init(std::move(ops), width, height);
+
+        spdlog::info("[StateImageManager::initOperations]: Pipeline built for {}x{}.", width, height);
+        return true;
+    }
+    catch (const std::exception& e) {
+        spdlog::error("[StateImageManager::initOperations]: Exception: {}", e.what());
+        return false;
+    }
+}
 
 void StateImageManager::workerLoop()
 {
