@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "managers/source_manager.h"
 #include "managers/state_image_manager.h"
 #include "operations/operation_descriptor.h"
 #include "common/image_region.h"
