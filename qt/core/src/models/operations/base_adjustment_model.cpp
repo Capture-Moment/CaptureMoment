@@ -18,7 +18,7 @@ BaseAdjustmentModel::BaseAdjustmentModel(QObject* parent)
 {
     // Initialize the parameter structure's value.
     m_params.value = 0.0f; // Default: no adjustment
-    spdlog::debug("BaseAdjustmentModel: Created with default value {}", m_params.value);
+    spdlog::debug("[BaseAdjustmentModel::BaseAdjustmentModel] Created with default value {}", m_params.value);
 }
 
 void BaseAdjustmentModel::setValue(float val)
@@ -31,7 +31,7 @@ void BaseAdjustmentModel::setValue(float val)
         return; // No change, exit early.
     }
 
-    bool was_active = m_params.isActive();
+    bool was_active { m_params.isActive() };
 
     // Update the internal parameter structure.
     m_params.value = clamped_value;
@@ -41,7 +41,7 @@ void BaseAdjustmentModel::setValue(float val)
 
     if (was_active != is_now_active) {
         emit isActiveChanged(); // Emit inherited signal from OperationProvider
-        spdlog::debug("BaseAdjustmentModel::setValue: Activity state changed to {}", is_now_active);
+        spdlog::debug("[BaseAdjustmentModel::setValue]: Activity state changed to {}", is_now_active);
     }
 }
 

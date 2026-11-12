@@ -95,7 +95,7 @@ void ImageControllerBase::loadImageFromUrl(const QUrl& file_url)
         return;
     }
 
-    QString native_path = file_url.toLocalFile();
+    QString native_path { file_url.toLocalFile() };
 
     if (native_path.isEmpty()) {
         spdlog::warn("[ImageControllerBase::loadImageFromUrl]: Failed to convert URL to local file path: {}", file_url.toString().toStdString());
@@ -150,14 +150,14 @@ void ImageControllerBase::doLoadImage(const QString& file_path)
     spdlog::info("[ImageControllerBase::doLoadImage]: Starting load on worker thread");
 
     // 1. Load image
-    auto load_result = m_engine->loadImage(file_path.toStdString());
+    auto load_result { m_engine->loadImage(file_path.toStdString()) };
 
     if (!load_result) {
         spdlog::error("[ImageControllerBase::doLoadImage]: Load failed for {}", file_path.toStdString());
-        auto err = load_result.error();
-        QString error_msg = QString::fromStdString(
+        auto err { load_result.error() };
+        QString error_msg { QString::fromStdString(
             std::format("CoreError [{}]: {}", static_cast<int>(err), Core::ErrorHandling::to_string(err))
-        );
+        )};
         onImageLoadResult(false, error_msg);
         return;
     }
@@ -189,10 +189,10 @@ void ImageControllerBase::doLoadImage(const QString& file_path)
     spdlog::debug("[ImageControllerBase::doLoadImage]: Requesting downsampled image {}x{}",
                   downsample_size.width(), downsample_size.height());
 
-    auto display_image_result = m_engine->getDownsampledDisplayImage(
+    auto display_image_result { m_engine->getDownsampledDisplayImage(
         static_cast<Core::Common::ImageDim>(downsample_size.width()),
         static_cast<Core::Common::ImageDim>(downsample_size.height())
-    );
+    )};
 
     if (!display_image_result) {
         spdlog::error("[ImageControllerBase::doLoadImage]: Failed to get downsampled image: {}",
@@ -228,12 +228,12 @@ void ImageControllerBase::doApplyOperations(std::vector<Core::Operations::Operat
     // The core uses a deferred future: the continuation that updates the working image
     // and clears the "update in progress" flag only runs when .get() is called.
     spdlog::debug("[ImageControllerBase::doApplyOperations]: Applying operations via PhotoEngine");
-    auto apply_future = m_engine->applyOperations(std::move(operations));
+    auto apply_future { m_engine->applyOperations(std::move(operations)) };
     if (!apply_future.valid()) {
         onOperationResult(false, "Failed to start operation");
         return;
     }
-    bool apply_ok = apply_future.get();
+    bool apply_ok { apply_future.get() };
     if (!apply_ok) {
         onOperationResult(false, "Operation processing failed");
         return;
@@ -252,10 +252,10 @@ void ImageControllerBase::doApplyOperations(std::vector<Core::Operations::Operat
     spdlog::debug("[ImageControllerBase::doApplyOperations]: Requesting downsampled image {}x{}", 
                   downsample_size.width(), downsample_size.height());
 
-    auto display_image_result = m_engine->getDownsampledDisplayImage(
+    auto display_image_result { m_engine->getDownsampledDisplayImage(
         static_cast<Core::Common::ImageDim>(downsample_size.width()),
         static_cast<Core::Common::ImageDim>(downsample_size.height())
-    );
+    )};
 
     if (!display_image_result) {
         spdlog::error("[ImageControllerBase::doApplyOperations]: Failed to get downsampled display image: {}",
@@ -315,7 +315,7 @@ void ImageControllerBase::connectModelsToStateManager()
     }
 
     // Use the specific list of BaseAdjustmentModel (SAFE, NO CAST NEEDED)
-    const auto& models = m_operation_model_manager->getBaseAdjustmentModels();
+    const auto& models { m_operation_model_manager->getBaseAdjustmentModels() };
     for (const auto& model : models) { // model is std::shared_ptr<UI::Models::Operations::BaseAdjustmentModel>
         if (model) {
             // Connect the EXISTING valueChanged signal from BaseAdjustmentModel
@@ -328,7 +328,7 @@ void ImageControllerBase::connectModelsToStateManager()
 
                                  // 1. Update the OperationStateManager with the CURRENT state of this specific model
                                  if (m_operation_state_manager) {
-                                     auto descriptor = model->getDescriptor(); // Get the descriptor for the specific model that changed
+                                     auto descriptor { model->getDescriptor() }; // Get the descriptor for the specific model that changed
                                      m_operation_state_manager->addOrUpdateOperation(descriptor);
                                      spdlog::debug("[ImageControllerBase::connectModelsToStateManager]: Operation '{}' updated in StateManager via valueChanged signal.", descriptor.name);
                                  } else {
@@ -337,7 +337,7 @@ void ImageControllerBase::connectModelsToStateManager()
                                  }
 
                                  // 2. Retrieve the full list of active operations from OperationStateManager
-                                auto active_ops = m_operation_state_manager->getActiveOperations();
+                                auto active_ops { m_operation_state_manager->getActiveOperations() };
 
                                  // 3. Trigger the applyOperations workflow with the full list of active operations (Move semantics)
                                 applyOperations(std::move(active_ops));

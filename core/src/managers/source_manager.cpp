@@ -81,7 +81,7 @@ std::expected<void, ErrorHandling::CoreError> SourceManager::loadFile(std::strin
         return std::unexpected(ErrorHandling::CoreError::FileNotFound);
     }
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock<std::mutex> lock(m_mutex);
 
     if (isLoaded_unsafe()) {
         unloadInternal();
@@ -344,7 +344,7 @@ std::expected<void, ErrorHandling::CoreError> SourceManager::convertToRgbaIntern
 
 void SourceManager::unload()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock<std::mutex> lock(m_mutex);
     unloadInternal();
 }
 
@@ -359,7 +359,7 @@ void SourceManager::unloadInternal()
 
 bool SourceManager::isLoaded() const
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock<std::mutex> lock(m_mutex);
     return isLoaded_unsafe();
 }
 
@@ -387,7 +387,7 @@ std::expected<std::unique_ptr<Common::ImageRegion>, ErrorHandling::CoreError>
 SourceManager::getTile(Common::ImageDim x, Common::ImageDim y,
                        Common::ImageDim width, Common::ImageDim height)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock<std::mutex> lock(m_mutex);
 
     if (!isLoaded_unsafe()) {
         spdlog::warn("[SourceManager::getTile] No image loaded");
@@ -444,7 +444,7 @@ SourceManager::getTile(Common::ImageDim x, Common::ImageDim y,
 std::expected<void, ErrorHandling::CoreError>
 SourceManager::setTile(const Common::ImageRegion& tile)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock<std::mutex> lock(m_mutex);
 
     if (!isLoaded_unsafe()) {
         spdlog::warn("[SourceManager::setTile] No image loaded");
@@ -497,7 +497,7 @@ SourceManager::setTile(const Common::ImageRegion& tile)
 
 std::optional<std::string> SourceManager::getMetadata(std::string_view key) const
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock<std::mutex> lock(m_mutex);
 
     if (!m_image_buf) {
         return std::nullopt;
@@ -511,7 +511,7 @@ std::optional<std::string> SourceManager::getMetadata(std::string_view key) cons
 
 std::string SourceManager::getImageSourcePath() const
 {
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
     return m_current_path;
 }
 

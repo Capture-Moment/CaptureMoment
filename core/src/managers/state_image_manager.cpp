@@ -7,12 +7,10 @@
 
 #include "managers/state_image_manager.h"
 
-#include "image_processing/factories/working_image_factory.h"
 #include "pipeline/pipeline_context.h"
 #include "workers/worker_context.h"
 #include "image_processing/working_image_context.h"
 #include "managers/source_manager.h"
-#include "common/types/memory_type.h"
 
 #include <spdlog/spdlog.h>
 #include <utility>
@@ -38,7 +36,7 @@ StateImageManager::~StateImageManager()
 {
     // Signal the worker thread to stop and wake it up safely (prevents lost wakeup)
     {
-        std::lock_guard<std::mutex> lock(m_work_mutex);
+        std::scoped_lock<std::mutex> lock(m_work_mutex);
         m_stop_requested.store(true, std::memory_order_release);
     }
     m_work_cv.notify_one();
@@ -84,13 +82,13 @@ bool StateImageManager::loadImage(std::string_view path)
 
     // 3. Update State Metadata
     {
-        std::lock_guard lock(m_state_mutex);
+        std::scoped_lock lock(m_state_mutex);
         m_original_image_path = std::string(path);
     }
 
     // 4. Clear any pending operations from previous image
     {
-        std::lock_guard lock(m_work_mutex);
+        std::scoped_lock lock(m_work_mutex);
         m_pending_work.reset();
     }
 
@@ -155,7 +153,7 @@ void StateImageManager::workerLoop()
         // --------------------------------------------------------
         bool has_more_work { false };
         {
-            std::lock_guard<std::mutex> lock(m_work_mutex);
+            std::scoped_lock<std::mutex> lock(m_work_mutex);
             has_more_work = m_pending_work.has_value();
 
             if (!has_more_work)
@@ -194,7 +192,7 @@ bool StateImageManager::executeProcessing(std::vector<Operations::OperationDescr
 
         std::shared_ptr<ImageProcessing::IWorkingImageHardware> working_image;
         {
-            std::lock_guard<std::mutex> lock(m_state_mutex);
+            std::scoped_lock<std::mutex> lock(m_state_mutex);
             working_image = m_working_image_context->getWorkingImage();
         }
 
@@ -220,7 +218,7 @@ std::expected<void, ErrorHandling::CoreError> StateImageManager::commitWorkingIm
 
     std::shared_ptr<ImageProcessing::IWorkingImageHardware> working_image_hw;
     {
-        std::lock_guard lock(m_state_mutex);
+        std::scoped_lock lock(m_state_mutex);
         working_image_hw = m_working_image_context->getWorkingImage();
     }
 
@@ -278,7 +276,7 @@ std::future<bool> StateImageManager::applyOperations(std::vector<Operations::Ope
     auto future { promise->get_future() };
 
     {
-        std::lock_guard<std::mutex> lock(m_work_mutex);
+        std::scoped_lock<std::mutex> lock(m_work_mutex);
 
         if (m_active_promise) {
             try { m_active_promise->set_value(true); } // Superseded = success (not an error)
@@ -309,25 +307,25 @@ void StateImageManager::waitForPendingProcessing()
 
 Common::ImageDim StateImageManager::getSourceWidth() const
 {
-    std::lock_guard lock(m_state_mutex);
+    std::scoped_lock lock(m_state_mutex);
     return m_source_manager ? m_source_manager->width() : 0;
 }
 
 Common::ImageDim StateImageManager::getSourceHeight() const
 {
-    std::lock_guard lock(m_state_mutex);
+    std::scoped_lock lock(m_state_mutex);
     return m_source_manager ? m_source_manager->height() : 0;
 }
 
 Common::ImageChan StateImageManager::getSourceChannels() const
 {
-    std::lock_guard lock(m_state_mutex);
+    std::scoped_lock lock(m_state_mutex);
     return m_source_manager ? m_source_manager->channels() : 0;
 }
 
 std::expected<std::unique_ptr<Common::ImageRegion>, ErrorHandling::CoreError> StateImageManager::getWorkingImageAsRegion() const
 {
-    std::lock_guard lock(m_state_mutex);
+    std::scoped_lock lock(m_state_mutex);
 
     if (!m_working_image_context) {
         return std::unexpected(ErrorHandling::CoreError::InvalidWorkingImage);
@@ -339,7 +337,7 @@ std::expected<std::unique_ptr<Common::ImageRegion>, ErrorHandling::CoreError> St
 std::expected<std::unique_ptr<Common::ImageRegion>, ErrorHandling::CoreError>
 StateImageManager::getDownsampledDisplayImage(Common::ImageDim target_width, Common::ImageDim target_height)
 {
-    std::lock_guard lock(m_state_mutex);
+    std::scoped_lock lock(m_state_mutex);
 
     if (!m_working_image_context) {
         spdlog::error("[StateImageManager::getDownsampledDisplayImage]: No WorkingImageContext");

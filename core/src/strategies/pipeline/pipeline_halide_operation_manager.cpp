@@ -71,7 +71,7 @@ void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescr
     m_last_operations = operations;
 
     // 3. Lock and update the executor based on whether the structure changed or not.
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     if (structure_changed) {
         spdlog::info("[PipelineHalideOperationManager::init]: Structure changed. Recompiling pipeline.");
@@ -86,7 +86,7 @@ void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescr
 
 bool PipelineHalideOperationManager::execute(ImageProcessing::IWorkingImageHardware& working_image)
 {
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     if (!m_executor) {
         spdlog::debug("[PipelineHalideOperationManager::execute]: error call m_executor->execute");

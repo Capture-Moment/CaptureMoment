@@ -14,7 +14,7 @@ HighlightsModel::HighlightsModel(QObject* parent)
     : BaseAdjustmentModel(parent)
 {
     m_params.value = Core::Operations::OperationRanges::getHighlightsDefaultValue();
-    spdlog::debug("HighlightsModel: Created (inherits default value from BaseAdjustmentModel)");
+    spdlog::debug("[HighlightsModel::HighlightsModel]: Created (inherits default value from BaseAdjustmentModel)");
 }
 
 Core::Operations::OperationDescriptor HighlightsModel::getDescriptor() const
@@ -30,21 +30,21 @@ Core::Operations::OperationDescriptor HighlightsModel::getDescriptor() const
 
 void HighlightsModel::reset()
 {
-    spdlog::debug("HighlightsModel::reset: Resetting to default value ({})", Core::Operations::OperationRanges::getHighlightsDefaultValue());
+    spdlog::debug("[HighlightsModel::reset]: Resetting to default value ({})", Core::Operations::OperationRanges::getHighlightsDefaultValue());
     setValue(Core::Operations::OperationRanges::getHighlightsDefaultValue());
 }
 
 // Handles successful operation completion from ImageControllerBase.
 void HighlightsModel::onOperationCompleted()
 {
-    spdlog::debug("HighlightsModel: Operation Completed successfully");
+    spdlog::debug("[HighlightsModel::onOperationCompleted]: Operation Completed successfully");
     emit operationApplied();
 }
 
 // Handles operation failure from ImageControllerBase.
 void HighlightsModel::onOperationFailed(const QString& error)
 {
-    spdlog::error("HighlightsModel: Operation failed - {}", error.toStdString());
+    spdlog::error("[HighlightsModel::onOperationFailed]: Operation failed - {}", error.toStdString());
     emit operationFailed(error);
 }
 

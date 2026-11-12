@@ -14,7 +14,7 @@ ContrastModel::ContrastModel(QObject* parent)
     : BaseAdjustmentModel(parent)
 {
     m_params.value = Core::Operations::OperationRanges::getContrastDefaultValue();
-    spdlog::debug("ContrastModel: Created (inherits default value from BaseAdjustmentModel)");
+    spdlog::debug("[ContrastModel::ContrastModel]: (inherits default value from BaseAdjustmentModel)");
 }
 
 Core::Operations::OperationDescriptor ContrastModel::getDescriptor() const
@@ -30,21 +30,21 @@ Core::Operations::OperationDescriptor ContrastModel::getDescriptor() const
 
 void ContrastModel::reset()
 {
-    spdlog::debug("ContrastModel::reset: Resetting to default value ({})", Core::Operations::OperationRanges::getContrastDefaultValue());
+    spdlog::debug("[ContrastModel::reset]: Resetting to default value ({})", Core::Operations::OperationRanges::getContrastDefaultValue());
     setValue(Core::Operations::OperationRanges::getContrastDefaultValue());
 }
 
 // Handles successful operation completion from ImageControllerBase.
 void ContrastModel::onOperationCompleted()
 {
-    spdlog::debug("ContrastModel: Operation Completed successfully");
+    spdlog::debug("[ContrastModel::onOperationCompleted]: Operation Completed successfully");
     emit operationApplied();
 }
 
 // Handles operation failure from ImageControllerBase.
 void ContrastModel::onOperationFailed(const QString& error)
 {
-    spdlog::error("ContrastModel: Operation failed - {}", error.toStdString());
+    spdlog::error("[ContrastModel::onOperationFailed]: Operation failed - {}", error.toStdString());
     emit operationFailed(error);
 }
 

@@ -14,7 +14,7 @@ BlacksModel::BlacksModel(QObject* parent)
     : BaseAdjustmentModel(parent)
 {
     m_params.value = Core::Operations::OperationRanges::getBlacksDefaultValue();
-    spdlog::debug("BlacksModel: Created (inherits default value from BaseAdjustmentModel)");
+    spdlog::debug("[BlacksModel::BlacksModel]: Created (inherits default value from BaseAdjustmentModel)");
 }
 
 Core::Operations::OperationDescriptor BlacksModel::getDescriptor() const
@@ -30,21 +30,21 @@ Core::Operations::OperationDescriptor BlacksModel::getDescriptor() const
 
 void BlacksModel::reset()
 {
-    spdlog::debug("BlacksModel::reset: Resetting to default value ({})", Core::Operations::OperationRanges::getBlacksDefaultValue());
+    spdlog::debug("[BlacksModel::reset]: Resetting to default value ({})", Core::Operations::OperationRanges::getBlacksDefaultValue());
     setValue(Core::Operations::OperationRanges::getBlacksDefaultValue());
 }
 
 // Handles successful operation completion from ImageControllerBase.
 void BlacksModel::onOperationCompleted()
 {
-    spdlog::debug("BlacksModel: Operation Completed successfully");
+    spdlog::debug("[BlacksModel::onOperationCompleted]: Operation Completed successfully");
     emit operationApplied();
 }
 
 // Handles operation failure from ImageControllerBase.
 void BlacksModel::onOperationFailed(const QString& error)
 {
-    spdlog::error("BlacksModel: Operation failed - {}", error.toStdString());
+    spdlog::error("[BlacksModel::onOperationFailed]: Operation failed - {}", error.toStdString());
     emit operationFailed(error);
 }
 

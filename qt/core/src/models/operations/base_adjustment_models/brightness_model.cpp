@@ -14,7 +14,7 @@ BrightnessModel::BrightnessModel(QObject* parent)
     : BaseAdjustmentModel(parent)
 {
     m_params.value = Core::Operations::OperationRanges::getBrightnessDefaultValue();
-    spdlog::debug("BrightnessModel: Created (inherits default value from BaseAdjustmentModel)");
+    spdlog::debug("[BrightnessModel::BrightnessModel]: Created (inherits default value from BaseAdjustmentModel)");
 }
 
 Core::Operations::OperationDescriptor BrightnessModel::getDescriptor() const
@@ -30,21 +30,21 @@ Core::Operations::OperationDescriptor BrightnessModel::getDescriptor() const
 
 void BrightnessModel::reset()
 {
-    spdlog::debug("BrightnessModel::reset: Resetting to default value ({})", Core::Operations::OperationRanges::getBrightnessDefaultValue());
+    spdlog::debug("[BrightnessModel::reset]: Resetting to default value ({})", Core::Operations::OperationRanges::getBrightnessDefaultValue());
     setValue(Core::Operations::OperationRanges::getBrightnessDefaultValue());
 }
 
 // Handles successful operation completion from ImageControllerBase.
 void BrightnessModel::onOperationCompleted()
 {
-    spdlog::debug("BrightnessModel: Operation Completed successfully");
+    spdlog::debug("[BrightnessModel::onOperationCompleted]: Operation Completed successfully");
     emit operationApplied();
 }
 
 // Handles operation failure from ImageControllerBase.
 void BrightnessModel::onOperationFailed(const QString& error)
 {
-    spdlog::error("BrightnessModel: Operation failed - {}", error.toStdString());
+    spdlog::error("[BrightnessModel::onOperationFailed]: Operation failed - {}", error.toStdString());
     emit operationFailed(error);
 }
 
