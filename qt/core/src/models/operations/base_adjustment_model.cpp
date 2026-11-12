@@ -18,7 +18,7 @@ BaseAdjustmentModel::BaseAdjustmentModel(QObject* parent)
 {
     // Initialize the parameter structure's value.
     m_params.value = 0.0f; // Default: no adjustment
-    spdlog::debug("[BaseAdjustmentModel::BaseAdjustmentModel] Created with default value {}", m_params.value);
+    spdlog::debug("[BaseAdjustmentModel::BaseAdjustmentModel]: Created with default value {}", m_params.value);
 }
 
 void BaseAdjustmentModel::setValue(float val)
