@@ -38,7 +38,7 @@ void OperationStateManager::addOrUpdateOperation(const Core::Operations::Operati
         *it = descriptor;
         spdlog::debug("[OperationStateManager::addOrUpdateOperation]: Updated operation '{}'.", descriptor.name);
     } else {
-        spdlog::warn("[OperationStateManager]: unknown operation type, ignored.");
+        spdlog::warn("[OperationStateManager::addOrUpdateOperation]: unknown operation type, ignored.");
     }
 }
 
@@ -55,8 +55,6 @@ void OperationStateManager::removeOperation(Core::Operations::OperationType type
         );
 
     spdlog::debug("[OperationStateManager::removeOperation]: Operation type '{}' removed (if it existed).", static_cast<int>(type));
-    // Note: applyCurrentOperationsToEngine() is no longer called here.
-    // That responsibility belongs to ImageControllerBase.
 }
 
 void OperationStateManager::clearAllOperations()
