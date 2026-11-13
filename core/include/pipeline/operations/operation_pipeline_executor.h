@@ -127,20 +127,32 @@ public:
     void updateRuntimeParams(std::vector<Operations::OperationDescriptor>&& operations);
 
 protected:
+
+    /**
+     * @brief Provides this backend's autoscheduler configuration.
+     *
+     * @details
+     * Pure backend description: scheduler name, plugin to load, Halide
+     * target and scheduler-specific extra parameters. No image dimensions
+     * here — they are consumed by buildChain() in the base class, which
+     * is the only place that needs them (autoscheduler estimates).
+     *
+     * @return The backend configuration.
+     */
+    [[nodiscard]] virtual AutoschedulerBackendConfig backendConfig() const = 0;
+
     /**
      * @brief Shared graph construction + autoscheduled compilation core.
      *
      * @details
-     * Builds the linear pipeline RGB(A) -> Oklab -> fused adjustments -> RGB(A),
-     * applies the backend autoscheduler and compiles JIT. CPU and GPU overrides
-     * only supply their `AutoschedulerBackendConfig`.
+     * Fetches the backend configuration via backendConfig(), builds the
+     * linear pipeline RGB(A) -> Oklab -> fused adjustments -> RGB(A),
+     * applies the autoscheduler and compiles JIT.
      *
      * @param width The width of the input image.
      * @param height The height of the input image.
-     * @param backend The backend configuration (scheduler, plugin, target, extras).
      */
-    void buildChain(const Common::ImageDim width, const Common::ImageDim height,
-                    const AutoschedulerBackendConfig& backend);
+    void buildChain(const Common::ImageDim width, const Common::ImageDim height);
 
     /**
      * @brief Applies all operations to the input function.
@@ -152,16 +164,6 @@ protected:
      * @return The resulting Halide function.
      */
     [[nodiscard]] Halide::Func applyOperations(const Halide::Func& input, const Halide::Var& x, const Halide::Var& y, const Halide::Var& c);
-
-    /**
-     * @brief Builds the Halide function graph based on `m_operations`.
-     * @details
-     * Iterates through operations, creates concrete instances, and chains them
-     * using `m_input` as the source.
-     * @param width The width of the input image.
-     * @param height The height of the input image.
-     */
-    virtual void buildOperationChain(const Common::ImageDim width, const Common::ImageDim height) = 0;
 
     /**
      * @brief Shared execution core: binds the buffer and realizes the pipeline.

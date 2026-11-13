@@ -39,7 +39,7 @@ public:
     [[nodiscard]] bool execute(ImageProcessing::IWorkingImageHardware& working_image) override;
 
 protected:
-    void buildOperationChain(const Common::ImageDim width, const Common::ImageDim height) override;
+    [[nodiscard]] AutoschedulerBackendConfig backendConfig() const override;
 };
 } // namespace Pipeline
 } // namespace CaptureMoment::Core

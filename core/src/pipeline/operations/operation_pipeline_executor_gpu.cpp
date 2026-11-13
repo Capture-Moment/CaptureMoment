@@ -12,8 +12,8 @@
 #include <spdlog/spdlog.h>
 
 namespace CaptureMoment::Core::Pipeline {
-
-void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim width, const Common::ImageDim height)
+    
+AutoschedulerBackendConfig OperationPipelineExecutorGPU::backendConfig() const
 {
     AutoschedulerBackendConfig backend;
     backend.scheduler_name = "Anderson2021";
@@ -22,8 +22,7 @@ void OperationPipelineExecutorGPU::buildOperationChain(const Common::ImageDim wi
     backend.target         = Config::AppConfig::getHalideTarget();
     // No extra parameters for now: Anderson2021 defaults are appropriate
     // for the GPU target until GPU-specific tuning is needed.
-
-    buildChain(width, height, backend);
+    return backend;
 }
 
 bool OperationPipelineExecutorGPU::execute(ImageProcessing::IWorkingImageHardware& working_image)

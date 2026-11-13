@@ -41,7 +41,7 @@ void OperationPipelineExecutor::init(
     m_factory = &factory;
 
     if (!m_operations.empty()) {
-        buildOperationChain(width, height);
+        buildChain(width, height);
     } else {
         m_chain_built = false;
         m_pipeline = Halide::Pipeline();
@@ -128,10 +128,10 @@ void OperationPipelineExecutor::ensurePluginLoaded(const std::string& plugin_nam
     });
 }
 
-void OperationPipelineExecutor::buildChain(const Common::ImageDim width,
-                                           const Common::ImageDim height,
-                                           const AutoschedulerBackendConfig& backend)
+void OperationPipelineExecutor::buildChain(const Common::ImageDim width, const Common::ImageDim height)
 {
+    const AutoschedulerBackendConfig backend { backendConfig() };
+
     ensurePluginLoaded(backend.plugin_name, backend.log_prefix);
 
     Halide::Var x("x"), y("y"), c("c");

@@ -11,10 +11,12 @@
 #include <spdlog/spdlog.h>
 #include <algorithm>
 #include <thread>
+#include "config/app_config.h"
+
 
 namespace CaptureMoment::Core::Pipeline {
 
-void OperationPipelineExecutorCPU::buildOperationChain(const Common::ImageDim width, const Common::ImageDim height)
+AutoschedulerBackendConfig OperationPipelineExecutorCPU::backendConfig() const
 {
     // hardware_concurrency() may legally return 0 -> clamp to at least 1.
     const auto cores { std::thread::hardware_concurrency() };
@@ -23,13 +25,12 @@ void OperationPipelineExecutorCPU::buildOperationChain(const Common::ImageDim wi
     backend.scheduler_name = "Adams2019";
     backend.plugin_name    = "autoschedule_adams2019";
     backend.log_prefix     = "[OperationPipelineExecutorCPU]";
-    backend.target         = Halide::get_host_target();
+    backend.target         =  Config::AppConfig::getHalideTarget();
     backend.extra["parallelism"] = std::to_string(std::max(1U, cores));
     backend.extra["beam_size"]   = "8";
     // Guard rail: caps the memory the schedule may materialize (interactive app).
     backend.extra["memory_limit"] = std::to_string(static_cast<long long>(1) << 30); // 1 GiB
-
-    buildChain(width, height, backend);
+    return backend;
 }
 
 bool OperationPipelineExecutorCPU::execute(ImageProcessing::IWorkingImageHardware& working_image)
