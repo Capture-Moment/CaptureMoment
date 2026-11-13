@@ -4,6 +4,9 @@
  *
  * @details
  * This class is a concrete implementation of `OperationPipelineExecutor` optimized for GPU execution.
+ * All the shared pipeline logic (graph, autoscheduling, compilation, execution) lives in
+ * `OperationPipelineExecutor`; this class only supplies the Anderson2021 backend configuration
+ * and the GPU-specific working image access path.
  *
  * @author CaptureMoment Team
  * @date 2026
@@ -23,7 +26,7 @@ namespace Pipeline {
  *
  * @details
  * This executor chains multiple image adjustment operations (Brightness, Contrast, etc.)
-    * into a single Halide graph. It relies on the `IHalidePipelineExecutor` base class
+ * into a single Halide graph. It relies on the `IHalidePipelineExecutor` base class
  * to provide the standardized 4-channel input parameter (`m_input`).
  */
 class OperationPipelineExecutorGPU final : public OperationPipelineExecutor {
@@ -37,8 +40,6 @@ public:
 
 protected:
     void buildOperationChain(const Common::ImageDim width, const Common::ImageDim height) override;
-    [[nodiscard]] bool executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer) override;
-
 };
 } // namespace Pipeline
 } // namespace CaptureMoment::Core
