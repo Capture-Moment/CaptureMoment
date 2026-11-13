@@ -79,12 +79,11 @@ jobs:
           CC: clang-${{ env.CLANG_VERSION }}
           CXX: clang++-${{ env.CLANG_VERSION }}
         run: |
-          HALIDE_PREFIX=$(python3 -c 'import halide; print(halide.install_dir())')
           cmake --preset debug-ninja \
             -DBUILD_DESKTOP_UI:BOOL=ON \
             -DBUILD_TESTS:BOOL=ON \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2;${HALIDE_PREFIX}"
+            -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2"
 
       # ====================================================================
       # Select files: PR -> changed .cpp files; push -> everything.

@@ -15,16 +15,16 @@
 namespace CaptureMoment::Core::Pipeline {
 
 void PipelineRegistry::registerAll() {
-    spdlog::info("PipelineRegistry: Registering all pipeline executors");
+    spdlog::info("[PipelineRegistry::registerAll]: Registering all pipeline executors");
 
     registerHalideExecutors();
     // registerAIExecutors(builder); // TODO: Enable when AI manager is ready
 
-    spdlog::info("PipelineRegistry: All pipeline executors registered");
+    spdlog::info("[PipelineRegistry::registerAll]: All pipeline executors registered");
 }
 
 void PipelineRegistry::registerHalideExecutors() {
-    spdlog::debug("PipelineRegistry: Registering Halide operation executors");
+    spdlog::debug("[PipelineRegistry::registerHalideExecutors]: Registering Halide operation executors");
 
     // Halide Fused Operations
     const auto backend {Config::AppConfig::instance().getProcessingBackend()};
@@ -33,12 +33,12 @@ void PipelineRegistry::registerHalideExecutors() {
         PipelineBuilder::registerCreator(PipelineType::HalideOperation, []() {
             return std::make_unique<OperationPipelineExecutorGPU>();
         });
-        spdlog::trace("PipelineRegistry: Registered HalideOperation Executor (GPU)");
+        spdlog::trace("[PipelineRegistry::registerHalideExecutors]: Registered HalideOperation Executor (GPU)");
     } else {
         PipelineBuilder::registerCreator(PipelineType::HalideOperation, []() {
             return std::make_unique<OperationPipelineExecutorCPU>();
         });
-        spdlog::trace("PipelineRegistry: Registered HalideOperation Executor (CPU)");
+        spdlog::trace("[PipelineRegistry::registerHalideExecutors]: Registered HalideOperation Executor (CPU)");
     }
 }
 

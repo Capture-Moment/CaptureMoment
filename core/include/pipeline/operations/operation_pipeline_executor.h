@@ -11,6 +11,10 @@
  * - **Single Compilation**: Uses `Halide::Pipeline` object to store the compiled JIT code.
  *   The compilation happens once in `init()` when operations change, not during execution.
  * - **Zero-Copy**: Execution binds the user's buffer to the inherited `m_input` and runs the pipeline.
+ * - **Shared Backend Core**: The graph construction, autoscheduling, compilation and
+ *   execution logic live here once. The CPU/GPU derived classes only provide their
+ *   backend configuration (scheduler name, plugin, target, extra params) and their
+ *   concrete working image access path.
  *
  * @author CaptureMoment Team
  * @date 2026
@@ -24,12 +28,38 @@
 #include "operations/operation_factory.h"
 #include "common/types/memory_type.h"
 
+#include <Halide.h>
+#include <string>
 #include <vector>
 #include <unordered_map>
 
 namespace CaptureMoment::Core {
 
 namespace Pipeline {
+
+/**
+ * @brief Backend-specific knobs passed to the shared compilation core.
+ *
+ * @details
+ * Everything that legitimately differs between the CPU and GPU executors:
+ * which autoscheduler to apply, which plugin to load, which target to
+ * compile for, and the scheduler-specific extra parameters.
+ */
+struct AutoschedulerBackendConfig {
+    /// Name passed to apply_autoscheduler(), e.g. "Adams2019".
+    std::string scheduler_name;
+    /// Plugin library to dlopen before applying the scheduler,
+    /// e.g. "autoschedule_adams2019". Failure is non-fatal: it is expected
+    /// when the autoscheduler is statically linked.
+    std::string plugin_name;
+    /// Log prefix of the calling backend, e.g. "[OperationPipelineExecutorCPU]".
+    std::string log_prefix;
+    /// Halide target this backend compiles for (host target for CPU,
+    /// app-configured GPU target for GPU).
+    Halide::Target target;
+    /// Scheduler-specific extra parameters (beam_size, parallelism, memory_limit...).
+    std::unordered_map<std::string, std::string> extra;
+};
 
 /**
  * @class OperationPipelineExecutor
@@ -68,15 +98,18 @@ public:
      * @details
      * This method is the main entry point for building and compiling a new Halide pipeline.
      * It takes ownership of the operations vector (Move Semantics) and stores it in `m_operations`.
-     * It then calls `buildOperationChain()` to construct the Halide graph and `applyScheduling()`
      * to optimize it, before finally compiling it into `m_pipeline`.
      *
      * @param operations The list of operation descriptors.
      * @param factory The operation factory reference.
+     * @param width The width of the input image.
+     * @param height The height of the input image.
      */
     void init(
         std::vector<Operations::OperationDescriptor>&& operations,
-        const Operations::OperationFactory& factory
+        const Operations::OperationFactory& factory,
+        const Common::ImageDim width,
+        const Common::ImageDim height
     );
 
     /**
@@ -93,18 +126,33 @@ public:
      */
     void updateRuntimeParams(std::vector<Operations::OperationDescriptor>&& operations);
 
-protected: 
-     /**
-     * @brief Applies scheduling directives (Vectorization/Parallelism/GPU tiling).
-     * @details  Called during the build phase to optimize `output_func`
-     * @param pipeline 
-     * @param x 
-     * @param y
-     * @param c
+protected:
+
+    /**
+     * @brief Provides this backend's autoscheduler configuration.
+     *
+     * @details
+     * Pure backend description: scheduler name, plugin to load, Halide
+     * target and scheduler-specific extra parameters. No image dimensions
+     * here — they are consumed by buildChain() in the base class, which
+     * is the only place that needs them (autoscheduler estimates).
+     *
+     * @return The backend configuration.
      */
-    virtual void applyScheduling(Halide::Func& pipeline, Halide::Var& x, Halide::Var& y, Halide::Var& c) const = 0;
-    
-    [[nodiscard]] bool executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer) override;
+    [[nodiscard]] virtual AutoschedulerBackendConfig backendConfig() const = 0;
+
+    /**
+     * @brief Shared graph construction + autoscheduled compilation core.
+     *
+     * @details
+     * Fetches the backend configuration via backendConfig(), builds the
+     * linear pipeline RGB(A) -> Oklab -> fused adjustments -> RGB(A),
+     * applies the autoscheduler and compiles JIT.
+     *
+     * @param width The width of the input image.
+     * @param height The height of the input image.
+     */
+    void buildChain(const Common::ImageDim width, const Common::ImageDim height);
 
     /**
      * @brief Applies all operations to the input function.
@@ -118,12 +166,27 @@ protected:
     [[nodiscard]] Halide::Func applyOperations(const Halide::Func& input, const Halide::Var& x, const Halide::Var& y, const Halide::Var& c);
 
     /**
-     * @brief Builds the Halide function graph based on `m_operations`.
+     * @brief Shared execution core: binds the buffer and realizes the pipeline.
+     *
      * @details
-     * Iterates through operations, creates concrete instances, and chains them
-     * using `m_input` as the source.
+     * Overrides the pure virtual of `IHalidePipelineExecutor` once for both
+     * backends: the execution logic is backend-agnostic (the backend is baked
+     * into the compiled pipeline by `buildChain`).
+     *
+     * @param[in] input_buffer The Halide buffer pointing to input image data.
+     * @param[out] output_buffer The Halide buffer pointing to output image data.
+     * @return true on success; also true when the chain was never built
+     *         (no-op semantics of the interactive fast path).
      */
-    virtual void buildOperationChain() = 0;
+    [[nodiscard]] bool executeOnHalideBuffer(Halide::Buffer<float>& input_buffer, Halide::Buffer<float>& output_buffer) override;
+
+    /**
+     * @brief dlopens an autoscheduler plugin exactly once per (plugin, process).
+     *
+     * @param plugin_name Plugin library name, e.g. "autoschedule_adams2019".
+     * @param log_prefix Log prefix of the calling backend.
+     */
+    static void ensurePluginLoaded(const std::string& plugin_name, const std::string& log_prefix);
 
     /**
      * @brief The compiled Halide pipeline object.

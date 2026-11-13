@@ -174,7 +174,7 @@ Common::MemoryType BenchmarkingBackendDecider::decide()
         Halide::Buffer<float> fresh_buffer { create_fresh_test_buffer(
             k_benchmark_width, k_benchmark_height, k_benchmark_channels) };
 
-        auto result = benchmark_gpu_feature(feature, fresh_buffer);
+        auto result { benchmark_gpu_feature(feature, fresh_buffer) };
 
         if (result.has_value())
         {
@@ -280,8 +280,7 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
         if (!try_compile_jit(pipeline, target))
         {
             spdlog::debug("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} - JIT compilation failed (not supported by Halide build)",
-                          Halide::Target::feature_to_name(feature
-                        ));
+                          Halide::Target::feature_to_name(feature));
             return std::nullopt;
         }
 
@@ -313,7 +312,7 @@ BenchmarkingBackendDecider::benchmark_gpu_feature(Halide::Target::Feature featur
             return std::nullopt;
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
+        auto end { std::chrono::high_resolution_clock::now() };
 
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         spdlog::info("[BenchmarkingBackendDecider::benchmark_gpu_feature]: {} benchmark success: {} ms",

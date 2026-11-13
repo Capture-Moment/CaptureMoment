@@ -31,6 +31,7 @@ function(find_required_packages)
 
     # Halide (mandatory)
     find_halide_package()
+    find_halide_autoschedulers()
 
     # Exiv2 (mandatory for serialization)
     find_exiv2_package()
@@ -104,59 +105,132 @@ endfunction()
 
 # ============================================================
 # Find Halide
-#
-# Halide is distributed as a pip wheel (halide / halide-bin /
-# halide-runtime). The setup scripts install it in a project-local
-# virtualenv, so look there first, then fall back to an explicit
-# HALIDE_PREFIX, an active virtualenv, or a system-wide install.
 # ============================================================
 function(find_halide_package)
 
     message(STATUS "Searching for Halide...")
 
-    find_package(Halide 22.1 CONFIG QUIET)
+    set(_halide_version "22.1.0")
+    set(_venv_dir "${CMAKE_SOURCE_DIR}/.venv")
 
-    # Not found? Try installing the pinned wheel into the project venv.
-    if(NOT Halide_FOUND)
-        set(_halide_version "22.1.0")
+    if(WIN32)
+        set(_venv_python "${_venv_dir}/Scripts/python.exe")
+    else()
+        set(_venv_python "${_venv_dir}/bin/python")
+    endif()
 
-        # Locate or create the project-local venv
-        if(NOT EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
-            message(STATUS "Halide: creating project virtualenv (.venv)...")
-            execute_process(
-                COMMAND python3 -m venv "${CMAKE_SOURCE_DIR}/.venv"
-                RESULT_VARIABLE _venv_rc)
-        endif()
-
-        if(EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
-            message(STATUS "Halide not found — installing halide==${_halide_version} into .venv...")
-            execute_process(
-                COMMAND "${CMAKE_SOURCE_DIR}/.venv/bin/pip" install "halide==${_halide_version}"
-                RESULT_VARIABLE _pip_rc)
-        endif()
-
-        if(_pip_rc EQUAL 0)
-            # Re-run the venv query from the contributor's code, then retry find_package
-            execute_process(
-                COMMAND "${CMAKE_SOURCE_DIR}/.venv/bin/python" -c "import halide; print(halide.install_dir())"
-                OUTPUT_VARIABLE _halide_dir
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-                ERROR_QUIET
-                RESULT_VARIABLE _halide_query)
-            if(_halide_query EQUAL 0 AND EXISTS "${_halide_dir}")
-                list(APPEND CMAKE_PREFIX_PATH "${_halide_dir}")
-                find_package(Halide 22.1 CONFIG QUIET)
-            endif()
+    # 1. Create the venv if it does not exist
+    if(NOT EXISTS "${_venv_python}")
+        find_package(Python COMPONENTS Interpreter REQUIRED)
+        message(STATUS "Halide: creating project virtualenv in ${_venv_dir}...")
+        execute_process(
+            COMMAND "${Python_EXECUTABLE}" -m venv "${_venv_dir}"
+            RESULT_VARIABLE _venv_rc
+        )
+        if(NOT _venv_rc EQUAL 0 OR NOT EXISTS "${_venv_python}")
+            message(FATAL_ERROR "Failed to create the virtualenv in ${_venv_dir}.")
         endif()
     endif()
 
-    if(NOT Halide_FOUND)
-        message(FATAL_ERROR
-            "Halide 22.1+ could not be installed automatically.\n"
-            "Check your network connection, or set HALIDE_PREFIX to an existing install.")
+    # 2. Check whether halide is already installed in the venv
+    execute_process(
+        COMMAND "${_venv_python}" -c "import halide; print(halide.install_dir())"
+        OUTPUT_VARIABLE _halide_dir
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE _halide_query
+    )
+
+    # 3. Install halide into the venv if missing (or wrong version)
+    if(NOT _halide_query EQUAL 0)
+        message(STATUS "Halide: installing halide==${_halide_version} into .venv...")
+        execute_process(
+            COMMAND "${_venv_python}" -m pip install "halide==${_halide_version}"
+            RESULT_VARIABLE _pip_rc
+        )
+        if(NOT _pip_rc EQUAL 0)
+            message(FATAL_ERROR "Failed to install halide==${_halide_version} into .venv.")
+        endif()
+
+        execute_process(
+            COMMAND "${_venv_python}" -c "import halide; print(halide.install_dir())"
+            OUTPUT_VARIABLE _halide_dir
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+            RESULT_VARIABLE _halide_query
+        )
+        if(NOT _halide_query EQUAL 0)
+            message(FATAL_ERROR "halide installed but 'import halide' still fails in .venv.")
+        endif()
     endif()
+
+    file(TO_CMAKE_PATH "${_halide_dir}" _halide_dir)
+    message(STATUS "Halide install dir: ${_halide_dir}")
+
+    # 4. Locate the CMake package inside the venv
+    find_package(Halide ${_halide_version} CONFIG REQUIRED
+        PATHS 
+          "${_halide_dir}"
+          "${_venv_dir}"
+        NO_DEFAULT_PATH
+    )
+
+    if(NOT TARGET Halide::Halide)
+        message(FATAL_ERROR "Halide found, but target Halide::Halide is missing.")
+    endif()
+
+    set(Halide_FOUND TRUE PARENT_SCOPE)
+    set(Halide_VERSION "${Halide_VERSION}" PARENT_SCOPE)
+    set(HALIDE_PYTHON_EXECUTABLE "${_venv_python}" PARENT_SCOPE)
+
 endfunction()
 
+# ============================================================
+# Halide autoscheduler runtime plugins
+#
+# Called after find_halide_package().
+# ============================================================
+function(find_halide_autoschedulers)
+
+    if(TARGET Halide::Adams2019 AND TARGET Halide::Anderson2021)
+        return()
+    endif()
+
+    if(NOT HALIDE_PYTHON_EXECUTABLE)
+        message(FATAL_ERROR "HALIDE_PYTHON_EXECUTABLE is not set: call find_halide_package() first.")
+    endif()
+
+    # <venv>/bin/python or <venv>/Scripts/python.exe  ->  <venv>
+    get_filename_component(_venv_root "${HALIDE_PYTHON_EXECUTABLE}/../.." ABSOLUTE)
+
+    execute_process(
+        COMMAND "${HALIDE_PYTHON_EXECUTABLE}" -c "import halide; print(halide.install_dir())"
+        OUTPUT_VARIABLE _halide_dir
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE _rc)
+    file(TO_CMAKE_PATH "${_halide_dir}" _halide_dir)
+
+    message(STATUS "Halide autoschedulers: Halide_DIR=${Halide_DIR}")
+    message(STATUS "Halide autoschedulers: WITH_AUTOSCHEDULERS=${WITH_AUTOSCHEDULERS}")
+
+    # HalideAutoschedulers is a separate CMake package. Search next to the
+    # Halide package config, in the halide install dir, and in the venv root.
+    find_package(HalideAutoschedulers CONFIG QUIET
+        PATHS
+            "${_halide_dir}"
+            "${_venv_root}"
+        NO_DEFAULT_PATH)
+
+    if(NOT TARGET Halide::Adams2019 OR NOT TARGET Halide::Anderson2021)
+        message(FATAL_ERROR
+            "HalideAutoschedulers package not found (Halide_DIR=${Halide_DIR}, "
+            "venv=${_venv_root}). List what the wheel installed with: "
+            "find \"${_venv_root}\" -iname '*autoschedul*'")
+    endif()
+
+    message(STATUS "Halide autoschedulers: FOUND (Halide::Adams2019, Halide::Anderson2021).")
+endfunction()
 # ============================================================
 # Find magic_enum
 # ============================================================
@@ -271,7 +345,7 @@ function(summarize_found_packages)
     message(STATUS "==============================================================")
     message(STATUS "|    Preferred Version                                       |")
     message(STATUS "==============================================================")
-    message(STATUS "|   spdlog : 1.16.0")
+    message(STATUS "|   spdlog : 1.17.0")
     message(STATUS "|   OpenImageIO : 3.1.14.0")
     message(STATUS "|   Halide : 22.1.0")
     message(STATUS "|   Exiv2 : 0.28.7")

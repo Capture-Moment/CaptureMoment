@@ -4,6 +4,9 @@
  *
  * @details
  * This class is a concrete implementation of `OperationPipelineExecutor` optimized for CPU execution.
+ * All the shared pipeline logic (graph, autoscheduling, compilation, execution) lives in
+ * `OperationPipelineExecutor`; this class only supplies the Adams2019 backend configuration
+ * and the CPU-specific working image access path.
  *
  * @author CaptureMoment Team
  * @date 2026
@@ -23,7 +26,7 @@ namespace Pipeline {
  *
  * @details
  * This executor chains multiple image adjustment operations (Brightness, Contrast, etc.)
-    * into a single Halide graph. It relies on the `IHalidePipelineExecutor` base class
+ * into a single Halide graph. It relies on the `IHalidePipelineExecutor` base class
  * to provide the standardized 4-channel input parameter (`m_input`).
  */
 class OperationPipelineExecutorCPU final : public OperationPipelineExecutor {
@@ -36,10 +39,7 @@ public:
     [[nodiscard]] bool execute(ImageProcessing::IWorkingImageHardware& working_image) override;
 
 protected:
-    void buildOperationChain() override;
-
-private:
-    void applyScheduling(Halide::Func& pipeline, Halide::Var& x, Halide::Var& y, Halide::Var& c) const override;
+    [[nodiscard]] AutoschedulerBackendConfig backendConfig() const override;
 };
 } // namespace Pipeline
 } // namespace CaptureMoment::Core

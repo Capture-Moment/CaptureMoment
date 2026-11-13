@@ -16,12 +16,12 @@ PipelineHalideOperationManager::PipelineHalideOperationManager()
 {
     // Register all available operations (Concrete Creators)
     Core::Operations::OperationRegistry::registerAll(*m_operation_factory);
-    spdlog::debug("PipelineHalideOperationManager: Constructed with Pipeline and Worker contexts.");
+    spdlog::debug("[PipelineHalideOperationManager::PipelineHalideOperationManager]: Constructed with Pipeline and Worker contexts.");
     
     auto base_executor { Pipeline::PipelineBuilder::build(Pipeline::PipelineType::HalideOperation) };
 
     if (!base_executor) {
-        spdlog::error("PipelineHalideOperationManager::PipelineHalideOperationManager: Builder returned null.");
+        spdlog::error("[PipelineHalideOperationManager::PipelineHalideOperationManager]: Builder returned null.");
         return;
     }
 
@@ -29,7 +29,7 @@ PipelineHalideOperationManager::PipelineHalideOperationManager()
     auto* concrete_ptr { dynamic_cast<Pipeline::OperationPipelineExecutor*>(base_executor.get()) };
     
     if (!concrete_ptr) {
-        spdlog::error("PipelineHalideOperationManager::PipelineHalideOperationManager: Critical type mismatch.");
+        spdlog::error("[PipelineHalideOperationManager::PipelineHalideOperationManager]: Critical type mismatch.");
         return;
     }
 
@@ -38,7 +38,7 @@ PipelineHalideOperationManager::PipelineHalideOperationManager()
     m_executor.reset(concrete_ptr);
 }
 
-void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescriptor>&& operations)
+void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescriptor>&& operations, const Common::ImageDim width, const Common::ImageDim height)
 {
     // 1. Detect structural changes (type, name, enabled) vs value changes (params)
     bool structure_changed { true };
@@ -71,12 +71,12 @@ void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescr
     m_last_operations = operations;
 
     // 3. Lock and update the executor based on whether the structure changed or not.
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     if (structure_changed) {
         spdlog::info("[PipelineHalideOperationManager::init]: Structure changed. Recompiling pipeline.");
         // If the structure changed, we need to recompile the pipeline, which is more expensive. We call init() which will rebuild the graph and recompile.
-        m_executor->init(std::move(operations), *m_operation_factory);
+        m_executor->init(std::move(operations), *m_operation_factory, width, height);
     } else {
         spdlog::trace("[PipelineHalideOperationManager::init]: Values only. Updating runtime params.");
         // If only values changed, we can skip recompilation and just update the parameters in the existing pipeline. This is the fast path.
@@ -86,7 +86,7 @@ void PipelineHalideOperationManager::init(std::vector<Operations::OperationDescr
 
 bool PipelineHalideOperationManager::execute(ImageProcessing::IWorkingImageHardware& working_image)
 {
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     if (!m_executor) {
         spdlog::debug("[PipelineHalideOperationManager::execute]: error call m_executor->execute");

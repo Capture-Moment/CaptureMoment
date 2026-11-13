@@ -14,7 +14,7 @@ WhitesModel::WhitesModel(QObject* parent)
     : BaseAdjustmentModel(parent)
 {
     m_params.value = Core::Operations::OperationRanges::getWhitesDefaultValue();
-    spdlog::debug("WhitesModel: Created (inherits default value from BaseAdjustmentModel)");
+    spdlog::debug("[WhitesModel::WhitesModel]: Created (inherits default value from BaseAdjustmentModel)");
 }
 
 Core::Operations::OperationDescriptor WhitesModel::getDescriptor() const
@@ -37,14 +37,14 @@ void WhitesModel::reset()
 // Handles successful operation completion from ImageControllerBase.
 void WhitesModel::onOperationCompleted()
 {
-    spdlog::debug("WhitesModel: Operation Completed successfully");
+    spdlog::debug("[WhitesModel::onOperationCompleted]: Operation Completed successfully");
     emit operationApplied();
 }
 
 // Handles operation failure from ImageControllerBase.
 void WhitesModel::onOperationFailed(const QString& error)
 {
-    spdlog::error("WhitesModel: Operation failed - {}", error.toStdString());
+    spdlog::error("[WhitesModel::onOperationFailed]: Operation failed - {}", error.toStdString());
     emit operationFailed(error);
 }
 

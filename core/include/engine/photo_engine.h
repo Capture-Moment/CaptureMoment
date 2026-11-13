@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "managers/source_manager.h"
 #include "managers/state_image_manager.h"
 #include "operations/operation_descriptor.h"
 #include "common/image_region.h"
@@ -69,6 +68,13 @@ public:
      * @return `std::expected<void, CoreError>` indicating success or the specific error type.
      */
     [[nodiscard]] std::expected<void, ErrorHandling::CoreError> loadImage(std::string_view path);
+
+    /**
+     * @brief initOperations initializes the pipeline with a list of operations.
+     * @param list of operations
+     * @return `std::expected<void, CoreError>` indicating success or the specific error type.
+     */
+    [[nodiscard]]std::expected<void, ErrorHandling::CoreError> initOperations(std::vector<Operations::OperationDescriptor>&& ops);
 
     /**
      * @brief Commits the processed working image back to the source manager.

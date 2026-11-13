@@ -81,20 +81,6 @@ jobs:
             -Password "$env:FEED_TOKEN"
 
           & $nugetExe setapikey "$env:FEED_TOKEN" -Source "$env:FEED_URL"
-
-      # ====================================================================
-      # Setup Python and install Halide via pip
-      # ====================================================================
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-  
-      - name: pip halide
-        run: |
-         python -m pip install --only-binary :all: halide==22.1.0
-         $halideRoot = python -c "import halide; print(halide.install_dir())"
-         echo "HALIDE_ROOT=$halideRoot" >> $env:GITHUB_ENV
     
       # ====================================================================
       # Configure & Build with CMake
@@ -128,14 +114,6 @@ jobs:
               Get-ChildItem build/release-vcpkg-msvc -Recurse -Filter CaptureMoment.exe | Select-Object FullName
               exit 1
           }
-
-          $halideDll = Join-Path $env:HALIDE_ROOT "bin\Halide.dll"
-          if (-not (Test-Path $halideDll)) {
-              Write-Error "Halide.dll not found at $halideDll"
-              exit 1
-          }
-
-          Copy-Item $halideDll (Split-Path $exePath) -Force
 
           cpack -V --build-config Release `
               --config build/release-vcpkg-msvc/CPackConfig.cmake `

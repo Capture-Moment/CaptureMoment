@@ -1,6 +1,7 @@
 # qt/desktop/CMakeLists.txt
 
 project(CaptureMomentUIDesktop LANGUAGES CXX)
+include(GNUInstallDirs)
 
 message(STATUS "Configuring CaptureMoment Desktop UI...")
 
@@ -16,7 +17,6 @@ set_target_properties(${CAPTUREMOMENT_DESKTOP_TARGET} PROPERTIES
     AUTORCC TRUE
     AUTOUIC TRUE
 )
-
 
 set(QOBJECT_HEADERS
     # Utils
@@ -117,10 +117,6 @@ if(APPLE)
 endif()
 
 # ====================================================================
-# End
-# ====================================================================
-
-# ====================================================================
 # Resources configuration
 # ====================================================================
 qt_add_resources(${CAPTUREMOMENT_DESKTOP_TARGET} "config"
@@ -183,9 +179,8 @@ endif()
 
 target_sources(${CAPTUREMOMENT_DESKTOP_TARGET} PRIVATE ${PLATFORM_IMPL})
 
-
 # =====================================================================
-# Automatic deployment next to the executable (dev convenience)
+# Automatic deployment next to the executable
 # =====================================================================
 if(WIN32)
     find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt
@@ -285,6 +280,8 @@ if(APPLE)
             FOLLOW_SYMLINK_CHAIN
             FILES
                 \"$<TARGET_SONAME_FILE:Halide::Halide>\"
+                \"$<TARGET_FILE:Halide::Adams2019>\"
+                \"$<TARGET_FILE:Halide::Anderson2021>\"
                 \"$<TARGET_SONAME_FILE:OpenImageIO::OpenImageIO>\"
                 \"$<TARGET_SONAME_FILE:OpenImageIO::OpenImageIO_Util>\"
                 \"$<TARGET_SONAME_FILE:Exiv2::exiv2lib>\"
@@ -292,6 +289,9 @@ if(APPLE)
     ")
 endif()
 
+# =====================================================================
+# Deployment script generation and installation
+# =====================================================================
 
 qt_generate_deploy_qml_app_script(
     TARGET ${CAPTUREMOMENT_DESKTOP_TARGET}
@@ -340,8 +340,33 @@ if(APPLE)
     ")
 endif()
 
+
 # =====================================================================
-# End
+# Halide autoscheduler plugins (imported targets from PackageHelpers)
+# =====================================================================
+set(HALIDE_PLUGIN_TARGETS Halide::Adams2019 Halide::Anderson2021)
+
+# Build tree: copy next to the executable after each build
+foreach(_tgt IN LISTS HALIDE_PLUGIN_TARGETS)
+    add_custom_command(TARGET ${CAPTUREMOMENT_DESKTOP_TARGET} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:${_tgt}>
+                $<TARGET_FILE_DIR:${CAPTUREMOMENT_DESKTOP_TARGET}>
+        VERBATIM
+    )
+endforeach()
+
+# Install: next to the executable (Windows / Linux)
+if(NOT APPLE)
+    install(FILES
+        $<TARGET_FILE:Halide::Adams2019>
+        $<TARGET_FILE:Halide::Anderson2021>
+        DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
+
+# =====================================================================
+# Target linking and post-build steps
 # ====================================================================
 
 target_link_libraries(${CAPTUREMOMENT_DESKTOP_TARGET}
@@ -349,8 +374,6 @@ target_link_libraries(${CAPTUREMOMENT_DESKTOP_TARGET}
         capturemoment_qt_core_lib
         Qt6::Widgets
 )
-
-include(GNUInstallDirs)
 
 if(WIN32)
     add_custom_command(TARGET ${CAPTUREMOMENT_DESKTOP_TARGET} POST_BUILD
@@ -370,7 +393,7 @@ if(UNIX AND NOT APPLE)
     )
 endif()
 # =====================================================================
-# End
+# Summary of the configuration
 # =====================================================================
 
 message(STATUS "CaptureMoment Desktop UI configured successfully.")

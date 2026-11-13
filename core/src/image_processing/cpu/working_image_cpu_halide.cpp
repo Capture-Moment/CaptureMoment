@@ -24,8 +24,12 @@ bool WorkingImageCPU_Halide::bindView(const ImageView& view)
         return false;
     }
 
-    // 3. Initialize the Halide buffer to reference the CPU data (zero-copy)
-    initializeHalide(m_view_data_image.working_data, m_view_data_image.width, m_view_data_image.height, m_view_data_image.channels);
+    initializeHalide(
+        m_view_data_image.working_data,
+        static_cast<int>(m_view_data_image.width),
+        static_cast<int>(m_view_data_image.height),
+        static_cast<int>(m_view_data_image.channels)
+        );
 
     if (!m_halide_buffer.defined()) {
         spdlog::error("[WorkingImageCPU_Halide::bindView]: Failed to initialize Halide buffer.");
@@ -34,7 +38,9 @@ bool WorkingImageCPU_Halide::bindView(const ImageView& view)
 
     m_halide_original_buffer = Halide::Buffer<float>::make_interleaved(
         const_cast<float*>(m_view_data_image.original_data.data()),
-        m_view_data_image.width, m_view_data_image.height, m_view_data_image.channels
+        static_cast<int>(m_view_data_image.width),
+        static_cast<int>(m_view_data_image.height),
+        static_cast<int>(m_view_data_image.channels)
         );
 
     spdlog::debug("[WorkingImageCPU_Halide::bindView]: Bound and initialized Halide ({}x{}, {} ch).",
