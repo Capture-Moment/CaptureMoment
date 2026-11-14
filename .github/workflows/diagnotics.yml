@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  COMMON_ARGS: "-Ddesktop_ui=ON -Dtests=ON"
-  LINUX_ARGS: "-DBUILD_DESKTOP_UI:BOOL=ON -DBUILD_TESTS:BOOL=ON"
+  COMMON_ARGS: "-Ddesktop_ui=ON -Dtests=ON -Ddiagnostics=OFF"
+  LINUX_ARGS: "-DBUILD_DESKTOP_UI:BOOL=ON -DBUILD_TESTS:BOOL=ON -DBUILD_DIAGNOSTICS:BOOL=OFF"
   EXIV2_VERSION: "v0.28.7"
   OIIO_VERSION: "v3.1.14.0"
   INSTALL_PREFIX: "/Users/runner/local"
