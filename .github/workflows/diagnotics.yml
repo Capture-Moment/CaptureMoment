@@ -1,0 +1,198 @@
+# .github/workflows/diagnostics.yml
+
+name: CI Diagnostics
+
+on:
+  pull_request:
+    branches: ["main", "develop"]
+  workflow_dispatch:
+
+concurrency:
+  group: diagnostics
+  cancel-in-progress: true
+
+env:
+  COMMON_ARGS: "-Ddesktop_ui=ON -Dtests=ON"
+  LINUX_ARGS: "-DBUILD_DESKTOP_UI:BOOL=ON -DBUILD_TESTS:BOOL=ON"
+  EXIV2_VERSION: "v0.28.7"
+  OIIO_VERSION: "v3.1.14.0"
+  INSTALL_PREFIX: "/Users/runner/local"
+  CLANG_VERSION: "23"
+
+jobs:
+  # ---------------- Windows : ASan ----------------
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.10.2'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtshadertools'
+
+      - name: Setup vcpkg
+        shell: pwsh
+        run: |
+          cd C:\vcpkg
+          git fetch origin cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3
+          git checkout cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3
+          .\bootstrap-vcpkg.bat
+          echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
+
+      - uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: x64
+
+      - name: Configure & Build (ASan)
+        shell: pwsh
+        run: |
+          cmake --preset debug-vcpkg-msvc ${{ env.COMMON_ARGS }} `
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /EHsc /GR /Zi /fsanitize=address" `
+            "-DCMAKE_C_FLAGS=/DWIN32 /D_WINDOWS /Zi /fsanitize=address"
+          cmake --build --preset debug-vcpkg-msvc --parallel
+
+      - name: Test (ASan)
+        shell: pwsh
+        run: ctest --preset debug-vcpkg-msvc --output-on-failure --no-tests=error
+
+  # ---------------- macOS : ASan+UBSan puis TSan ----------------
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - run: brew install ccache inih libpng jpeg libtiff openexr pystring
+
+      - name: Cache Exiv2
+        id: cache-exiv2
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.INSTALL_PREFIX }}/exiv2
+          key: exiv2-${{ env.EXIV2_VERSION }}-macos
+
+      - name: Build Exiv2
+        if: steps.cache-exiv2.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch ${{ env.EXIV2_VERSION }} https://github.com/Exiv2/exiv2.git /tmp/exiv2-src
+          cmake -S /tmp/exiv2-src -B /tmp/exiv2-src/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PREFIX }}/exiv2 \
+            -DBUILD_SHARED_LIBS=ON -DEXIV2_BUILD_SAMPLES=OFF -DEXIV2_BUILD_TESTS=OFF
+          cmake --build /tmp/exiv2-src/build --parallel
+          cmake --install /tmp/exiv2-src/build
+
+      - name: Cache OpenImageIO
+        id: cache-oiio
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.INSTALL_PREFIX }}/oiio
+          key: oiio-${{ env.OIIO_VERSION }}-macos
+
+      - name: Build OpenImageIO
+        if: steps.cache-oiio.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch ${{ env.OIIO_VERSION }} https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/oiio-src
+          cmake -S /tmp/oiio-src -B /tmp/oiio-src/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PREFIX }}/oiio \
+            -DEXIV2_ROOT=${{ env.INSTALL_PREFIX }}/exiv2 \
+            -DOpenImageIO_BUILD_MISSING_DEPS=required -DSTOP_ON_WARNING=0 \
+            -DOIIO_BUILD_TOOLS=OFF -DOIIO_BUILD_TESTS=OFF -DUSE_PYTHON=OFF
+          cmake --build /tmp/oiio-src/build --parallel
+          cmake --install /tmp/oiio-src/build
+
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.10.2'
+          target: 'desktop'
+          host: 'mac'
+          modules: 'qtshadertools'
+
+      # ----- ASan + UBSan -----
+      - name: Configure & Build (ASan+UBSan)
+        run: |
+          cmake --preset debug-homebrew --fresh ${{ env.COMMON_ARGS }} \
+            -DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
+            -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g"
+          cmake --build --preset debug-homebrew --parallel
+
+      - name: Test (ASan+UBSan)
+        run: ctest --preset debug-homebrew --output-on-failure --no-tests=error
+
+      # ----- TSan -----
+      - name: Configure & Build (TSan)
+        if: always()
+        run: |
+          cmake --preset debug-homebrew --fresh ${{ env.COMMON_ARGS }} \
+            -DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g" \
+            -DCMAKE_C_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g"
+          cmake --build --preset debug-homebrew --parallel
+
+      - name: Test (TSan)
+        if: always()
+        run: ctest --preset debug-homebrew --output-on-failure --no-tests=error
+
+  # ---------------- Linux : Valgrind & MSan ----------------
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/${{ github.repository }}/build-linux:ci
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --user root
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Install Valgrind + Clang
+        run: |
+          apt-get update
+          apt-get install -y valgrind wget gnupg lsb-release ca-certificates
+          wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh
+          bash /tmp/llvm.sh "${CLANG_VERSION}"
+
+      # ----- Valgrind -----
+      - name: Configure & Build (Valgrind)
+        run: |
+          cmake --preset debug-ninja --fresh ${{ env.LINUX_ARGS }} \
+            -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2" \
+            -DCMAKE_CXX_FLAGS="-g" \
+            -DMEMORYCHECK_COMMAND="$(command -v valgrind)" \
+            -DMEMORYCHECK_COMMAND_OPTIONS="--leak-check=full;--error-exitcode=1"
+          cmake --build --preset debug-ninja --parallel $(nproc)
+
+      - name: Test (Valgrind)
+        run: ctest --preset debug-ninja -T memcheck --output-on-failure --no-tests=error
+
+      # ----- MSan -----
+      - name: Configure & Build (MSan)
+        if: always()
+        run: |
+          cmake --preset debug-ninja --fresh ${{ env.LINUX_ARGS }} \
+            -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2" \
+            -DCMAKE_C_COMPILER=clang-${CLANG_VERSION} \
+            -DCMAKE_CXX_COMPILER=clang++-${CLANG_VERSION} \
+            -DCMAKE_CXX_FLAGS="-fsanitize=memory -g" \
+            -DCMAKE_C_FLAGS="-fsanitize=memory -g"
+          cmake --build --preset debug-ninja --parallel $(nproc)
+
+      - name: Test (MSan)
+        if: always()
+        run: ctest --preset debug-ninja --output-on-failure --no-tests=error
