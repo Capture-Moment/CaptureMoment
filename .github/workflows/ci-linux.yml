@@ -12,6 +12,7 @@ on:
 
 env:
   CMAKE_GENERATOR: Ninja
+  COMMON_ARGS: "-DBUILD_DESKTOP_UI:BOOL=ON -DBUILD_TESTS:BOOL=ON"
 
 jobs:
   # ====================================================================
@@ -88,10 +89,7 @@ jobs:
         id: configure
         run: |
           cmake \
-          --preset ${{ matrix.preset }} \
-          -DBUILD_DESKTOP_UI:BOOL=ON \
-          -DBUILD_SANITIZERS:BOOL=ON \
-          -DBUILD_TESTS:BOOL=ON \
+          --preset ${{ matrix.preset }} ${{ env.COMMON_ARGS }} \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DCMAKE_PREFIX_PATH="/opt/qt/6.10.2/gcc_64;/opt/oiio;/opt/exiv2"
 
@@ -102,17 +100,17 @@ jobs:
       # ====================================================================
       - name: Build Project
         run: |
-           cmake --build build/${{ matrix.preset }} --config ${{ matrix.build-type }} --parallel $(nproc)
+           cmake --build --preset ${{ matrix.preset }} --config ${{ matrix.build-type }} --parallel $(nproc)
         shell: bash
 
       # ====================================================================
-      # Test
+      # Test with Sanitizers
       # ====================================================================
       - name: Run Tests
         if: ${{ always() && steps.configure.outcome == 'success' }}
         run: |
-          ctest --test-dir build/${{ matrix.preset }} \
-            --output-on-failure -C ${{ matrix.build-type }} --no-tests=ignore \
+          ctest --preset ${{ matrix.preset }} \
+            --output-on-failure -C ${{ matrix.build-type }} \
             --output-junit "$GITHUB_WORKSPACE/test-results-${{ matrix.preset }}.xml"
         shell: bash
 
