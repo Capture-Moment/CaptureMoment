@@ -14,8 +14,7 @@ env:
   EXIV2_VERSION: "v0.28.7"
   OIIO_VERSION: "v3.1.14.0"
   INSTALL_PREFIX: "/Users/runner/local"
-  COMMON_ARGS: "-Ddesktop_ui=ON -Dtests=ON"
-
+  COMMON_ARGS: "-Ddesktop_ui=ON -Dtests=ON -Ddiagnostics=OFF"
 
 jobs:
   build:

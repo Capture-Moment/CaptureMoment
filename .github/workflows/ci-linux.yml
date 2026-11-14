@@ -12,7 +12,7 @@ on:
 
 env:
   CMAKE_GENERATOR: Ninja
-  COMMON_ARGS: "-DBUILD_DESKTOP_UI:BOOL=ON -DBUILD_TESTS:BOOL=ON"
+  COMMON_ARGS: "-DBUILD_DESKTOP_UI:BOOL=ON -DBUILD_TESTS:BOOL=ON -DBUILD_DIAGNOSTICS:BOOL=OFF"
 
 jobs:
   # ====================================================================
