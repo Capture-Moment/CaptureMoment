@@ -48,7 +48,7 @@ echo "[1/4] Installing system dependencies..."
 sudo dnf install -y \
     ccache \
     patchelf desktop-file-utils \
-    xcb-util-cursor \
+    xcb-util-cursor valgrind \
     spdlog-devel libcurl-devel libxkbcommon-devel mesa-libGL-devel \
     brotli-devel expat-devel inih-devel libssh-devel \
     libxml2-devel zlib-devel libjpeg-turbo-devel freetype-devel \

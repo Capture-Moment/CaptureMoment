@@ -51,7 +51,7 @@ echo "[1/4] Installing system dependencies..."
 sudo apt-get update && sudo apt-get install -y \
     ccache \
     patchelf desktop-file-utils \
-    libxcb-cursor0 \
+    libxcb-cursor0 valgrind \
     libspdlog-dev libcurl4-openssl-dev libxkbcommon-dev libgl1-mesa-dev \
     libbrotli-dev libexpat1-dev libinih-dev libssh-dev \
     libxml2-utils zlib1g-dev libjpeg-dev libfreetype-dev \
