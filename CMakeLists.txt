@@ -27,7 +27,7 @@ verify_cpp23_support() # From CompilerDetection.cmake
 option(BUILD_DESKTOP_UI "Build desktop UI" OFF)
 option(BUILD_MOBILE_UI "Build mobile UI" OFF)
 option(BUILD_TESTS "Build tests" OFF)
-option(BUILD_SANITIZERS "Build sanitizers" OFF)
+option(BUILD_DIAGNOSTICS "Build diagnostics" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_EXAMPLES "Build examples" OFF)
 
@@ -35,7 +35,7 @@ option(BUILD_EXAMPLES "Build examples" OFF)
 option(desktop_ui "Alias for BUILD_DESKTOP_UI" OFF)
 option(mobile_ui "Alias for BUILD_MOBILE_UI" OFF)
 option(tests "Alias for BUILD_TESTS" OFF)
-option(sanitizers "Alias for BUILD_SANITIZERS" OFF)
+option(diagnostics "Alias for BUILD_DIAGNOSTICS" OFF)
 option(benchmarks "Alias for BUILD_BENCHMARKS" OFF)
 option(examples "Alias for BUILD_EXAMPLES" OFF)
 
@@ -49,7 +49,7 @@ endfunction()
 sync_alias(desktop_ui  BUILD_DESKTOP_UI)
 sync_alias(mobile_ui   BUILD_MOBILE_UI)
 sync_alias(tests       BUILD_TESTS)
-sync_alias(sanitizers  BUILD_SANITIZERS)
+sync_alias(diagnostics  BUILD_DIAGNOSTICS)
 sync_alias(benchmarks  BUILD_BENCHMARKS)
 sync_alias(examples    BUILD_EXAMPLES)
 
@@ -75,10 +75,10 @@ configure_vcpkg_if_present() # From VcpkgHelpers.cmake
 find_required_packages() # From PackageHelpers.cmake
 
 # ============================================================
-# Enable sanitizers if requested
+# Enable diagnostics if requested
 # ============================================================
-if(BUILD_SANITIZERS)
-    include(Sanitizers)
+if(BUILD_DIAGNOSTICS)
+    include(Diagnostics) # From Diagnostics.cmake
 endif()
 
 # ============================================================
@@ -155,7 +155,7 @@ message(STATUS "|   Build Options:                                            ")
 message(STATUS "|   Desktop UI    : ${BUILD_DESKTOP_UI}")
 message(STATUS "|   Mobile UI     : ${BUILD_MOBILE_UI}")
 message(STATUS "|   Tests         : ${BUILD_TESTS}")
-message(STATUS "|   Sanitizers    : ${BUILD_SANITIZERS}")
+message(STATUS "|   Diagnostics   : ${BUILD_DIAGNOSTICS}")
 message(STATUS "|   Benchmarks    : ${BUILD_BENCHMARKS}")
 message(STATUS "|   Examples      : ${BUILD_EXAMPLES}")
 message(STATUS "==============================================================")

@@ -1,0 +1,83 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: Latest
+
+# Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+AccessModifierOffset: -4
+IndentCaseLabels: false
+IndentWrappedFunctionNames: false
+NamespaceIndentation: None
+FixNamespaceComments: true
+
+# Longueur de ligne
+ColumnLimit: 120
+
+# Accolades
+BreakBeforeBraces: Attach
+
+# Fonctions et blocs courts
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortBlocksOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: false
+
+# Paramètres, arguments, initialiseurs
+BinPackParameters: true
+BinPackArguments: true
+AllowAllParametersOfDeclarationOnNextLine: true
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: NextLine
+BreakTemplateDeclarations: Yes
+BreakAfterReturnType: None
+
+# Opérateurs
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+
+# Pointeurs / références
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+DerivePointerAlignment: false
+
+# Espaces
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpacesBeforeTrailingComments: 2
+SpacesInAngles: Never
+SpacesInParens: Never
+
+# Commentaires
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
+ReflowComments: true
+AlignEscapedNewlines: Left
+
+# Includes (Qt : l'ordre peut compter, on ne réordonne pas)
+SortIncludes: Never
+IncludeBlocks: Preserve
+
+# Fichiers
+LineEnding: LF
+InsertNewlineAtEOF: true
+MaxEmptyLinesToKeep: 1
+KeepEmptyLines:
+  AtStartOfBlock: false
+  AtStartOfFile: false
+  AtEndOfFile: false
+---
+Language: Json
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 0
+...

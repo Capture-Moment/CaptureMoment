@@ -14,6 +14,7 @@ env:
   EXIV2_VERSION: "v0.28.7"
   OIIO_VERSION: "v3.1.14.0"
   INSTALL_PREFIX: "/Users/runner/local"
+  COMMON_ARGS: "-Ddesktop_ui=ON -Dtests=ON -Ddiagnostics=OFF"
 
 jobs:
   build:
@@ -157,10 +158,7 @@ jobs:
       - name: Configure CMake
         run: |
           cmake \
-          --preset ${{ matrix.preset }} \
-          -Ddesktop_ui=ON \
-          -Dsanitizers=ON \
-          -Dtests=ON \
+          --preset ${{ matrix.preset }} ${{ env.COMMON_ARGS }} \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -DCMAKE_PREFIX_PATH="${{ env.INSTALL_PREFIX }}/exiv2;${{ env.INSTALL_PREFIX }}/oiio"

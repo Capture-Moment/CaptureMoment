@@ -199,7 +199,7 @@ if(WIN32)
         VERBATIM
     )
 
-    if(BUILD_SANITIZERS)
+    if(BUILD_DIAGNOSTICS)
     # The ASan runtime lives next to the compiler (cl.exe). Copy it next to
     # the executable so it can be launched directly from the build dir.
     get_filename_component(_compiler_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
