@@ -21,8 +21,7 @@ env:
   FULL_WARNING_LIMIT: "99999"
   # In a PR, only changed files are analysed: no new warnings allowed.
   PR_WARNING_LIMIT: "0"
-
-  COMMON_ARGS: "-DBUILD_DESKTOP_UI:BOOL -DBUILD_TESTS:BOOL"
+  COMMON_ARGS: "-DBUILD_DESKTOP_UI:BOOL=ON -DBUILD_TESTS:BOOL=ON -DBUILD_DIAGNOSTICS:BOOL=OFF"
 
 jobs:
   clang-tidy:
